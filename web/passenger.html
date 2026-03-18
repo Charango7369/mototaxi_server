@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Solicitar Mototaxi</title>
+</head>
+
+<body>
+
+<h2>Solicitar Mototaxi</h2>
+
+<button onclick="requestRide()">Pedir Mototaxi</button>
+
+<p id="status"></p>
+
+<script>
+
+function requestRide(){
+
+navigator.geolocation.getCurrentPosition(function(position){
+
+let lat = position.coords.latitude;
+let lon = position.coords.longitude;
+
+document.getElementById("status").innerHTML =
+"Buscando mototaxi cercano...";
+
+fetch("/ride/request", {
+
+method: "POST",
+
+headers: {
+"Content-Type": "application/json"
+},
+
+body: JSON.stringify({
+lat: lat,
+lon: lon
+})
+
+})
+
+.then(response => response.json())
+
+.then(data => {
+
+if(data.status === "driver assigned"){
+
+document.getElementById("status").innerHTML =
+"Mototaxi asignado: #" + data.driver_id;
+
+}
+
+else
+{´
+
+document.getElementById("status").innerHTML =
+"No hay mototaxis disponibles";
+
+}
+
+});
+
+});
+
+}
+
+</script>
+
+</body>
+
+</html>

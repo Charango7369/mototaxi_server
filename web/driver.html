@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="utf-8">
+<title>Conductor Mototaxi</title>
+</head>
+
+<body>
+
+<h2>Login Conductor</h2>
+
+<input id="telefono" placeholder="Teléfono">
+<button onclick="login()">Entrar</button>
+
+<p id="status"></p>
+
+<script>
+
+let DRIVER_ID = null;
+
+async function login(){
+
+    const telefono = document.getElementById("telefono").value;
+
+    const response = await fetch("/driver/login?telefono="+telefono,{
+        method:"POST"
+    });
+
+    const data = await response.json();
+
+    if(data.status=="ok"){
+
+        DRIVER_ID = data.driver_id;
+
+        document.getElementById("status").innerHTML =
+        "Conectado como "+data.nombre;
+
+        startGPS();
+
+    }
+	else{
+
+        document.getElementById("status").innerHTML =
+        "Conductor no registrado";
+
+    }
+
+}
+
+
+function startGPS(){
+
+navigator.geolocation.watchPosition(async function(pos){
+
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+
+    await fetch("/driver/location",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+            driver_id: DRIVER_ID,
+            lat: lat,
+            lon: lon
+        })
+    });
+
+}, function(error){
+    console.log(error);
+},
+{
+enableHighAccuracy:true
+});
+
+}
+
+async function checkRequests(){
+
+    if(!DRIVER_ID) return;
+
+    const response = await fetch("/driver/"+DRIVER_ID+"/requests");
+
+    const rides = await response.json();
+
+    const div = document.getElementById("requests");
+
+    div.innerHTML="";
+
+    rides.forEach(r => {
+
+        div.innerHTML += `
+        <div style="border:1px solid black;padding:10px;margin:5px;">
+        Pasajero en:
+        ${r.lat}, ${r.lon}
+        <br>
+        <button onclick="acceptRide(${r.ride_id})">
+        Aceptar viaje
+        </button>
+        </div>
+        `;
+    });
+
+}
+
+
+
+
+async function acceptRide(ride_id){
+
+    await fetch("/ride/"+ride_id+"/accept",{
+        method:"POST"
+    });
+
+    alert("Viaje aceptado");
+
+}
+
+setInterval(checkRequests,3000);
+</script>
+
+</body>
+</html>
+
