@@ -1,9 +1,24 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
-.env
+
+# Entornos virtuales
 venv/
 env/
+
+# Variables de entorno
+.env
+
+# Base de datos
 *.db
 *.sqlite3
+
+# Archivos del sistema
 .DS_Store
+
+# Logs
+*.log
+
+# Archivos temporales
+*.swp
