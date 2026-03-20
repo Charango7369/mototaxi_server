@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mapa en tiempo real</title>
+    <meta charset="utf-8" />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <style>
+        #map {
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // Crear mapa centrado en Apolo
+    var map = L.map('map').setView([-14.72, -68.41], 14);
+
+    // Cargar mapa base
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: 'OSM'
+    }).addTo(map);
+
+    // Guardar marcadores por driver
+    var drivers = {};
+
+    // Conectar WebSocket
+    var socket = new WebSocket("ws://127.0.0.1:8000/ws/drivers");
+
+    socket.onopen = function() {
+        console.log("🟢 WebSocket conectado");
+    };
+
+    socket.onmessage = function(event) {
+        console.log("📩 Datos recibidos:", event.data);
+
+        var data = JSON.parse(event.data);
+
+        var id = data.driver_id;
+        var lat = data.lat;
+        var lon = data.lon;
+
+        // Si ya existe, moverlo
+        
+    if (drivers[id]) {
+    drivers[id].setLatLng([lat, lon]);
+    } else {
+
+    var motoIcon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/2972/2972185.png',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+    });
+
+    drivers[id] = L.marker([lat, lon], { icon: motoIcon })
+        .addTo(map)
+        .bindPopup("Driver " + id);
+}
+        
+    };
+
+    socket.onerror = function(error) {
+        console.log("❌ Error WebSocket:", error);
+    };
+
+    socket.onclose = function() {
+        console.log("🔴 WebSocket cerrado");
+    };
+</script>
+
+</body>
+</html>

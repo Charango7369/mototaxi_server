@@ -1,24 +1,19 @@
-# Python
+# Archivos de entorno virtual
+venv/
+env/
 __pycache__/
 *.pyc
 *.pyo
 
-# Entornos virtuales
-venv/
-env/
-
-# Variables de entorno
-.env
-
-# Base de datos
+# Bases de datos locales
 *.db
 *.sqlite3
 
-# Archivos del sistema
-.DS_Store
-
-# Logs
+# Archivos temporales / logs
 *.log
+*.tmp
 
-# Archivos temporales
-*.swp
+# Configs de IDEs
+.vscode/
+.idea/
+.DS_Store

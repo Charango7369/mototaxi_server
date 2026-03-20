@@ -1,71 +1,30 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Driver
-from app.schemas import DriverLocation
+from app.services import driver_service
+from app.websocket_manager import manager  # 👈 ajusta si cambia el path
 
 router = APIRouter(prefix="/driver", tags=["Drivers"])
 
 
-# -----------------------------
-# REGISTRAR CONDUCTOR
-# -----------------------------
-@router.post("/register")
-def register_driver(nombre: str, telefono: str, db: Session = Depends(get_db)):
-    driver = Driver(
-        nombre=nombre,
-        telefono=telefono,
-        estado="DISPONIBLE"
+@router.post("/location")
+def update_location(
+    driver_id: int,
+    lat: float,
+    lon: float,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    result = driver_service.update_driver_location(db, driver_id, lat, lon)
+
+    background_tasks.add_task(
+        manager.broadcast,
+        {
+            "driver_id": driver_id,
+            "lat": lat,
+            "lon": lon
+        }
     )
 
-    db.add(driver)
-    db.commit()
-    db.refresh(driver)
-
-    return {"driver_id": driver.id, "status": "registered"}
-
-
-# -----------------------------
-# LOGIN CONDUCTOR
-# -----------------------------
-@router.post("/login")
-def driver_login(telefono: str, db: Session = Depends(get_db)):
-    driver = db.query(Driver).filter(Driver.telefono == telefono).first()
-
-    if not driver:
-        return {"status": "not_found"}
-
-    return {
-        "status": "ok",
-        "driver_id": driver.id,
-        "nombre": driver.nombre
-    }
-
-
-# -----------------------------
-# ACTUALIZAR UBICACIÓN
-# -----------------------------
-@router.post("/location")
-def update_location(data: DriverLocation, db: Session = Depends(get_db)):
-    driver = db.query(Driver).filter(Driver.id == data.driver_id).first()
-
-    if driver:
-        driver.lat = data.lat
-        driver.lon = data.lon
-        db.commit()
-
-    return {"status": "location updated"}
-
-
-# -----------------------------
-# VER CONDUCTORES
-# -----------------------------
-@router.get("/all")
-def get_drivers(db: Session = Depends(get_db)):
-    drivers = db.query(Driver).all()
-
-    return [
-        {"id": d.id, "lat": d.lat, "lon": d.lon}
-        for d in drivers
-    ]
+    return result
