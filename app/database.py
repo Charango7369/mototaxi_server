@@ -1,29 +1,24 @@
+# app/database.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-
 import os
-# Crear carpeta si no existe
-os.makedirs("data", exist_ok=True)
 
-# Ruta de la base de datos SQLite
-# DATABASE_URL = "sqlite:///./data/database.db"
-DATABASE_URL = "sqlite:///./test.db"
-# Motor de conexión
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH  = os.path.join(BASE_DIR, "..", "data", "database.db")
+DB_PATH  = os.path.normpath(DB_PATH)
+
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
+DATABASE_URL = f"sqlite:///{DB_PATH}"
+
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False}  # necesario para SQLite
+    connect_args={"check_same_thread": False}
 )
 
-# Sesiones de base de datos
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
-
-# Base para los modelos
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
-# 🔥 ESTA ES LA CLAVE
+
 def get_db():
     db = SessionLocal()
     try:

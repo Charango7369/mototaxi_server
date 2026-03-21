@@ -1,46 +1,42 @@
+# app/assigner.py
 import math
 from sqlalchemy.orm import Session
 from app.models import Driver
 
 
-# -----------------------------
-# DISTANCIA (HAVERSINE)
-# -----------------------------
 def distance(lat1, lon1, lat2, lon2):
-    R = 6371  # km
-
-    lat1 = math.radians(lat1)
-    lon1 = math.radians(lon1)
-    lat2 = math.radians(lat2)
-    lon2 = math.radians(lon2)
-
+    R = 6371
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
     dlat = lat2 - lat1
     dlon = lon2 - lon1
-
-    a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
-    return R * c
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
-# -----------------------------
-# BUSCAR CONDUCTOR MÁS CERCANO
-# -----------------------------
-def find_nearest_driver(db: Session, ride_request):
+def find_nearest_driver(db: Session, ride_request, sindicato_id: int = None):
+    query = db.query(Driver).filter(Driver.estado == "DISPONIBLE")
 
-    drivers = db.query(Driver).filter(Driver.estado == "DISPONIBLE").all()
+    if sindicato_id:
+        query = query.filter(Driver.sindicato_id == sindicato_id)
 
-    nearest_driver = None
-    min_distance = float("inf")
+    drivers = query.all()
+
+    nearest = None
+    min_dist = float("inf")
 
     for d in drivers:
         if d.lat is None or d.lon is None:
             continue
+        dist = distance(ride_request.origin_lat, ride_request.origin_lon, d.lat, d.lon)
+        if dist < min_dist:
+            min_dist = dist
+            nearest = d
 
-        dist = distance(ride_request.lat, ride_request.lon, d.lat, d.lon)
+    if not nearest:
+        return None
 
-        if dist < min_distance:
-            min_distance = dist
-            nearest_driver = d
+    # ✅ Marcar como OCUPADO antes de devolver
+    nearest.estado = "OCUPADO"
+    db.commit()
 
-    return nearest_driver.id if nearest_driver else None
+    return nearest.id
