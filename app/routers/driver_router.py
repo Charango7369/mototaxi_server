@@ -98,3 +98,23 @@ def get_driver_rides(driver_id: int, db: Session = Depends(get_db)):
         }
         for r in rides
     ]
+
+
+@router.post("/{driver_id}/disponible")
+def set_disponible(driver_id: int, db: Session = Depends(get_db)):
+    driver = db.query(Driver).filter(Driver.id == driver_id).first()
+    if not driver:
+        raise HTTPException(status_code=404, detail="Conductor no encontrado")
+    driver.estado = "DISPONIBLE"
+    db.commit()
+    return {"status": "DISPONIBLE", "driver_id": driver_id}
+
+
+@router.post("/{driver_id}/disponible")
+def set_disponible(driver_id: int, db: Session = Depends(get_db)):
+    driver = db.query(Driver).filter(Driver.id == driver_id).first()
+    if not driver:
+        raise HTTPException(status_code=404, detail="Conductor no encontrado")
+    driver.estado = "DISPONIBLE"
+    db.commit()
+    return {"status": "DISPONIBLE", "driver_id": driver_id}
