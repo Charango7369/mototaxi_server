@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, BackgroundTasks
+from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -7,6 +7,7 @@ from app.assigner import find_nearest_driver
 from app.models import Ride, Driver
 from app.services.ride_service import update_ride_status
 from app.websocket_manager import manager
+from app.dependencies import get_current_driver
 
 router = APIRouter(prefix="/ride", tags=["Rides"])
 
@@ -18,7 +19,6 @@ async def request_ride(
     db: Session = Depends(get_db)
 ):
     driver_id = find_nearest_driver(db, data, sindicato_id=data.sindicato_id)
-
     if not driver_id:
         return {"status": "no_driver_available"}
 
@@ -51,26 +51,50 @@ async def request_ride(
             "tarifa": data.tarifa
         }
     )
-
     return {"status": "assigned", "ride_id": ride.id, "driver_id": driver_id}
 
 
 @router.post("/{ride_id}/accept")
-def accept_ride(ride_id: int, db: Session = Depends(get_db)):
+def accept_ride(
+    ride_id: int,
+    db: Session = Depends(get_db),
+    conductor: Driver = Depends(get_current_driver)
+):
+    ride = db.query(Ride).filter(Ride.id == ride_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Viaje no encontrado")
+    if ride.driver_id != conductor.id:
+        raise HTTPException(status_code=403, detail="No es tu viaje")
     return update_ride_status(db, ride_id, "ACEPTADO")
 
 
 @router.post("/{ride_id}/start")
-def start_ride(ride_id: int, db: Session = Depends(get_db)):
+def start_ride(
+    ride_id: int,
+    db: Session = Depends(get_db),
+    conductor: Driver = Depends(get_current_driver)
+):
+    ride = db.query(Ride).filter(Ride.id == ride_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Viaje no encontrado")
+    if ride.driver_id != conductor.id:
+        raise HTTPException(status_code=403, detail="No es tu viaje")
     return update_ride_status(db, ride_id, "EN_VIAJE")
 
 
 @router.post("/{ride_id}/finish")
-def finish_ride(ride_id: int, db: Session = Depends(get_db)):
+def finish_ride(
+    ride_id: int,
+    db: Session = Depends(get_db),
+    conductor: Driver = Depends(get_current_driver)
+):
     ride = db.query(Ride).filter(Ride.id == ride_id).first()
-    if ride and ride.driver_id:
-        driver = db.query(Driver).filter(Driver.id == ride.driver_id).first()
-        if driver:
-            driver.estado = "DISPONIBLE"
-            db.commit()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Viaje no encontrado")
+    if ride.driver_id != conductor.id:
+        raise HTTPException(status_code=403, detail="No es tu viaje")
+    driver = db.query(Driver).filter(Driver.id == conductor.id).first()
+    if driver:
+        driver.estado = "DISPONIBLE"
+        db.commit()
     return update_ride_status(db, ride_id, "FINALIZADO")

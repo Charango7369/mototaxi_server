@@ -5,6 +5,7 @@ from typing import Optional
 
 from app.database import get_db
 from app.models import Driver, Ride
+from app.auth import crear_token
 from app.websocket_manager import manager
 
 router = APIRouter(prefix="/driver", tags=["Drivers"])
@@ -35,7 +36,8 @@ def register_driver(data: DriverRegister, db: Session = Depends(get_db)):
     db.add(driver)
     db.commit()
     db.refresh(driver)
-    return {"status": "registered", "driver_id": driver.id, "token": f"driver-{driver.id}"}
+    token = crear_token(driver.id, data.sindicato_id)
+    return {"status": "registered", "driver_id": driver.id, "token": token}
 
 
 @router.post("/login")
@@ -43,7 +45,8 @@ def login_driver(data: DriverLogin, db: Session = Depends(get_db)):
     driver = db.query(Driver).filter(Driver.telefono == data.telefono).first()
     if not driver:
         raise HTTPException(status_code=404, detail="Conductor no encontrado")
-    return {"status": "ok", "driver_id": driver.id, "nombre": driver.nombre, "token": f"driver-{driver.id}"}
+    token = crear_token(driver.id, driver.sindicato_id)
+    return {"status": "ok", "driver_id": driver.id, "nombre": driver.nombre, "sindicato_id": driver.sindicato_id, "token": token}
 
 
 @router.post("/location")
