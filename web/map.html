@@ -1,69 +1,570 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-<meta charset="utf-8">
-<title>Mapa Mototaxis</title>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>MotoApolo — Panel Operador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
+:root {
+  --bg: #0d0f12;
+  --surface: #141720;
+  --surface2: #1c2130;
+  --border: #2a3045;
+  --accent: #f5a623;
+  --accent2: #3ecf8e;
+  --danger: #e84040;
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  height: 100vh;
+  display: grid;
+  grid-template-rows: 48px 1fr;
+  grid-template-columns: 1fr 340px;
+  overflow: hidden;
+}
+
+/* ── HEADER ── */
+header {
+  grid-column: 1 / -1;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+}
+
+.logo {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+}
+
+.logo span { color: var(--text); }
+
+.ws-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+.ws-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--danger);
+  transition: background 0.3s;
+}
+.ws-dot.connected { background: var(--accent2); }
+
+.stats-bar {
+  display: flex;
+  gap: 24px;
+  margin-left: 32px;
+}
+
+.stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.stat-num {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Filtro sindicato */
+select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+}
+
+/* ── MAPA ── */
 #map {
-height: 100vh;
+  background: #0a0c10;
+  z-index: 1;
+}
+
+.leaflet-container { background: #0a0c10 !important; }
+
+/* ── SIDEBAR ── */
+aside {
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-section {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 10px;
+}
+
+/* Lista conductores */
+#driver-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+#driver-list::-webkit-scrollbar { width: 3px; }
+#driver-list::-webkit-scrollbar-track { background: transparent; }
+#driver-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.driver-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(42,48,69,0.5);
+  transition: background 0.15s;
+  cursor: pointer;
+}
+
+.driver-card:hover { background: var(--surface2); }
+
+.driver-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.disponible { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+.ocupado    { background: var(--accent);  box-shadow: 0 0 6px var(--accent); }
+.inactivo   { background: var(--muted); }
+
+.driver-info { flex: 1; min-width: 0; }
+
+.driver-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.driver-meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.driver-estado {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.estado-DISPONIBLE { background: rgba(62,207,142,0.15); color: var(--accent2); }
+.estado-OCUPADO    { background: rgba(245,166,35,0.15);  color: var(--accent); }
+.estado-INACTIVO   { background: rgba(107,114,128,0.15); color: var(--muted); }
+
+/* Lista viajes */
+#ride-list {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+#ride-list::-webkit-scrollbar { width: 3px; }
+#ride-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.ride-card {
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(42,48,69,0.5);
+}
+
+.ride-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3px;
+}
+
+.ride-id {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+}
+
+.ride-status {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.status-ASIGNADO   { background: rgba(62,207,142,0.12); color: var(--accent2); }
+.status-ACEPTADO   { background: rgba(245,166,35,0.12);  color: var(--accent); }
+.status-EN_VIAJE   { background: rgba(99,130,220,0.15);  color: #8badff; }
+.status-FINALIZADO { background: rgba(107,114,128,0.12); color: var(--muted); }
+
+.ride-destino {
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.ride-meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* Log eventos */
+#event-log {
+  height: 120px;
+  overflow-y: auto;
+  padding: 6px 16px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+
+#event-log::-webkit-scrollbar { width: 3px; }
+#event-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.log-line { padding: 2px 0; border-bottom: 1px solid rgba(42,48,69,0.3); }
+.log-line .ts { color: var(--accent); margin-right: 6px; }
+.log-line .msg { color: var(--text); }
+
+/* Popup mapa */
+.leaflet-popup-content-wrapper {
+  background: var(--surface2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  color: var(--text) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+}
+.leaflet-popup-tip { background: var(--surface2) !important; }
+.popup-inner { font-family: var(--sans); font-size: 12px; }
+.popup-name { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.popup-row { color: var(--muted); font-family: var(--mono); font-size: 10px; margin-top: 2px; }
+.popup-row span { color: var(--text); }
+
+/* Moto icon SVG inline */
+.moto-marker {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  border: 2px solid;
+  transition: all 0.3s;
 }
 </style>
-
 </head>
-
 <body>
+
+<header>
+  <div class="logo">MOTO<span>APOLO</span></div>
+  <div class="stats-bar">
+    <div class="stat">
+      <span class="stat-num" id="cnt-disponible">0</span>
+      <span class="stat-label">Disponibles</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num" id="cnt-ocupado">0</span>
+      <span class="stat-label">En viaje</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num" id="cnt-rides">0</span>
+      <span class="stat-label">Viajes hoy</span>
+    </div>
+  </div>
+  <select id="sindicato-filter" onchange="filterSindicato(this.value)">
+    <option value="0">Todos los sindicatos</option>
+    <option value="1">Sindicato 1</option>
+    <option value="2">Sindicato 2</option>
+    <option value="3">Sindicato 3</option>
+    <option value="4">Sindicato 4</option>
+    <option value="5">Sindicato 5</option>
+  </select>
+  <div class="ws-status">
+    <div class="ws-dot" id="ws-dot"></div>
+    <span id="ws-label">desconectado</span>
+  </div>
+</header>
 
 <div id="map"></div>
 
+<aside>
+  <div class="sidebar-section">
+    <div class="section-title">Conductores activos</div>
+    <div id="driver-list"><div style="padding:8px;color:var(--muted);font-size:12px">Sin conductores conectados</div></div>
+  </div>
+  <div class="sidebar-section" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+    <div class="section-title">Viajes activos</div>
+    <div id="ride-list"><div style="padding:4px 0;color:var(--muted);font-size:12px">Sin viajes activos</div></div>
+  </div>
+  <div class="sidebar-section" style="padding-bottom:14px">
+    <div class="section-title">Eventos</div>
+    <div id="event-log"></div>
+  </div>
+</aside>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+// ── CONFIG ─────────────────────────────────────
+const API = `http://${location.hostname}:8000`;
+const WS  = `ws://${location.hostname}:8000/ws/operators`;
 
-// Crear mapa centrado en Apolo
-var map = L.map('map').setView([-14.72, -68.42], 14);
+// ── ESTADO ─────────────────────────────────────
+const drivers = {};   // driver_id -> {data, marker}
+const rides   = {};   // ride_id   -> data
+let   sindicatoFilter = 0;
 
-// Cargar OpenStreetMap
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-maxZoom: 19
+// ── MAPA ───────────────────────────────────────
+const map = L.map('map', { zoomControl: false }).setView([-14.7184, -68.4122], 15);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap © CARTO',
+  maxZoom: 19
 }).addTo(map);
 
-// almacenar marcadores
-var markers = {};
+L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-// función para actualizar conductores
-async function updateDrivers(){
-
-    const response = await fetch("/drivers");
-    const drivers = await response.json();
-
-    drivers.forEach(driver => {
-
-        if(markers[driver.id]){
-
-            markers[driver.id].setLatLng([driver.lat, driver.lon]);
-
-        }else{
-
-            markers[driver.id] = L.marker([driver.lat, driver.lon])
-            .addTo(map)
-            .bindPopup("Mototaxi "+driver.id);
-
-        }
-
-    });
-
+function makeIcon(estado) {
+  const color = estado === 'DISPONIBLE' ? '#3ecf8e' : estado === 'OCUPADO' ? '#f5a623' : '#6b7280';
+  const bg    = estado === 'DISPONIBLE' ? 'rgba(62,207,142,0.2)' : estado === 'OCUPADO' ? 'rgba(245,166,35,0.2)' : 'rgba(107,114,128,0.15)';
+  const svg = `<div style="
+    width:34px;height:34px;border-radius:50%;
+    background:${bg};border:2px solid ${color};
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;box-shadow:0 0 10px ${color}44;
+    transition:all 0.3s">🏍</div>`;
+  return L.divIcon({ html: svg, iconSize: [34,34], iconAnchor: [17,17], className: '' });
 }
 
-// actualizar cada 2 segundos
-setInterval(updateDrivers,2000);
+// ── WEBSOCKET ──────────────────────────────────
+function conectarWS() {
+  const ws = new WebSocket(WS);
 
-// primera carga
-updateDrivers();
+  ws.onopen = () => {
+    document.getElementById('ws-dot').classList.add('connected');
+    document.getElementById('ws-label').textContent = 'conectado';
+    logEvento('WebSocket operador conectado');
+    cargarDatos();
+  };
 
+  ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if (data.driver_id !== undefined) {
+      actualizarConductor(data);
+    }
+  };
+
+  ws.onclose = () => {
+    document.getElementById('ws-dot').classList.remove('connected');
+    document.getElementById('ws-label').textContent = 'reconectando...';
+    logEvento('WebSocket cerrado — reintentando en 3s');
+    setTimeout(conectarWS, 3000);
+  };
+
+  ws.onerror = () => {
+    logEvento('Error WebSocket');
+  };
+}
+
+// ── DATOS INICIALES ────────────────────────────
+async function cargarDatos() {
+  try {
+    // Cargar conductores desde la API
+    // Por ahora cargamos los que conocemos del estado local
+    // En la siguiente versión: GET /drivers
+    logEvento('Panel listo. Esperando actualizaciones...');
+    await cargarViajes();
+  } catch(e) {
+    logEvento('Error al cargar datos iniciales');
+  }
+}
+
+async function cargarViajes() {
+  try {
+    const res = await fetch(`${API}/rides/activos`);
+    if (!res.ok) return;
+    const data = await res.json();
+    data.forEach(r => {
+      rides[r.id] = r;
+    });
+    renderRides();
+    document.getElementById('cnt-rides').textContent = Object.keys(rides).length;
+  } catch(e) { /* endpoint opcional */ }
+}
+
+// ── ACTUALIZAR CONDUCTOR ───────────────────────
+function actualizarConductor(data) {
+  const id = data.driver_id;
+
+  if (sindicatoFilter > 0 && data.sindicato_id && data.sindicato_id != sindicatoFilter) return;
+
+  if (drivers[id]) {
+    drivers[id].data = { ...drivers[id].data, ...data };
+    drivers[id].marker.setLatLng([data.lat, data.lon]);
+    drivers[id].marker.setIcon(makeIcon(drivers[id].data.estado || 'DISPONIBLE'));
+    drivers[id].marker.setPopupContent(makePopup(drivers[id].data));
+  } else {
+    const marker = L.marker([data.lat, data.lon], { icon: makeIcon('DISPONIBLE') })
+      .addTo(map)
+      .bindPopup(makePopup(data));
+    drivers[id] = { data, marker };
+    logEvento(`Conductor #${id} aparece en el mapa`);
+  }
+
+  renderDriverList();
+  actualizarContadores();
+}
+
+function makePopup(d) {
+  return `<div class="popup-inner">
+    <div class="popup-name">${d.nombre || 'Conductor #' + d.driver_id}</div>
+    <div class="popup-row">Placa: <span>${d.placa || '—'}</span></div>
+    <div class="popup-row">Sindicato: <span>${d.sindicato_id || '—'}</span></div>
+    <div class="popup-row">Estado: <span>${d.estado || 'DISPONIBLE'}</span></div>
+    <div class="popup-row">Coords: <span>${d.lat?.toFixed(5)}, ${d.lon?.toFixed(5)}</span></div>
+  </div>`;
+}
+
+// ── RENDER LISTA CONDUCTORES ───────────────────
+function renderDriverList() {
+  const list = document.getElementById('driver-list');
+  const items = Object.values(drivers);
+
+  if (items.length === 0) {
+    list.innerHTML = '<div style="padding:8px;color:var(--muted);font-size:12px">Sin conductores conectados</div>';
+    return;
+  }
+
+  list.innerHTML = items.map(({data: d}) => `
+    <div class="driver-card" onclick="centrarConductor(${d.driver_id})">
+      <div class="driver-dot ${(d.estado||'DISPONIBLE').toLowerCase()}"></div>
+      <div class="driver-info">
+        <div class="driver-name">${d.nombre || 'Conductor #' + d.driver_id}</div>
+        <div class="driver-meta">S${d.sindicato_id || '?'} · ${d.placa || 'sin placa'}</div>
+      </div>
+      <div class="driver-estado estado-${d.estado || 'DISPONIBLE'}">${d.estado || 'DISPONIBLE'}</div>
+    </div>
+  `).join('');
+}
+
+// ── RENDER LISTA VIAJES ────────────────────────
+function renderRides() {
+  const list = document.getElementById('ride-list');
+  const items = Object.values(rides).filter(r => r.status !== 'FINALIZADO');
+
+  if (items.length === 0) {
+    list.innerHTML = '<div style="padding:4px 0;color:var(--muted);font-size:12px">Sin viajes activos</div>';
+    return;
+  }
+
+  list.innerHTML = items.map(r => `
+    <div class="ride-card">
+      <div class="ride-header">
+        <span class="ride-id">#${r.id}</span>
+        <span class="ride-status status-${r.status}">${r.status}</span>
+      </div>
+      <div class="ride-destino">${r.destino || 'Sin destino'}</div>
+      <div class="ride-meta">Conductor #${r.driver_id || '—'} · ${r.passenger_phone || '—'} · Bs ${r.tarifa || 5}</div>
+    </div>
+  `).join('');
+}
+
+// ── CONTADORES ────────────────────────────────
+function actualizarContadores() {
+  const vals = Object.values(drivers).map(d => d.data.estado || 'DISPONIBLE');
+  document.getElementById('cnt-disponible').textContent = vals.filter(e => e === 'DISPONIBLE').length;
+  document.getElementById('cnt-ocupado').textContent    = vals.filter(e => e === 'OCUPADO').length;
+}
+
+// ── FILTRO SINDICATO ──────────────────────────
+function filterSindicato(val) {
+  sindicatoFilter = parseInt(val);
+  Object.entries(drivers).forEach(([id, {data, marker}]) => {
+    if (sindicatoFilter === 0 || data.sindicato_id == sindicatoFilter) {
+      map.addLayer(marker);
+    } else {
+      map.removeLayer(marker);
+    }
+  });
+  renderDriverList();
+}
+
+// ── CENTRAR EN CONDUCTOR ───────────────────────
+function centrarConductor(id) {
+  const d = drivers[id];
+  if (d) {
+    map.flyTo([d.data.lat, d.data.lon], 17, { duration: 0.8 });
+    d.marker.openPopup();
+  }
+}
+
+// ── LOG EVENTOS ────────────────────────────────
+function logEvento(msg) {
+  const log = document.getElementById('event-log');
+  const now = new Date().toLocaleTimeString('es-BO', { hour12: false });
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="ts">${now}</span><span class="msg">${msg}</span>`;
+  log.insertBefore(line, log.firstChild);
+  if (log.children.length > 50) log.removeChild(log.lastChild);
+}
+
+// ── ARRANCAR ───────────────────────────────────
+conectarWS();
+
+// Simular conductor para demo si no hay WS aún
+setTimeout(() => {
+  if (Object.keys(drivers).length === 0) {
+    logEvento('Esperando conductores en línea...');
+  }
+}, 4000);
 </script>
-
 </body>
 </html>
