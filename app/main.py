@@ -6,6 +6,7 @@ import os
 from app.database import Base, engine
 from app.routers import driver_router, ride_router, ws_router
 from app.routers import stats_router
+from app.routers import monitor_router
 from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="MototaxiServer — Apolo")
@@ -22,5 +23,6 @@ app.include_router(driver_router.router)
 app.include_router(ride_router.router)
 app.include_router(ws_router.router)
 app.include_router(stats_router.router)
+app.include_router(monitor_router.router)
 
 Base.metadata.create_all(bind=engine)

@@ -22,7 +22,7 @@
 
     <main class="p-4 md:p-8 space-y-6">
 
-        <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section class="grid grid-cols-2 md:grid-cols-5 gap-4">
             
             <div class="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-yellow-500 transform hover:scale-105 transition-transform duration-300">
                 <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Viajes en Curso</p>
@@ -59,23 +59,15 @@
 
             <div class="bg-white p-6 rounded-2xl shadow-lg">
                 <h2 class="text-lg font-semibold mb-4 text-gray-700">Rendimiento por Sindicato (Hoy)</h2>
-                <ul class="space-y-3">
-                    <li class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-                        <span class="font-medium">Apolo Central</span>
-                        <span class="text-sm px-2.5 py-1 bg-yellow-100 text-yellow-800 rounded-full">45 Viajes</span>
-                    </li>
-                    <li class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-                        <span class="font-medium">Norte Express</span>
-                        <span class="text-sm px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full">32 Viajes</span>
-                    </li>
-                    <li class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-                        <span class="font-medium">Sur Delibery</span>
-                        <span class="text-sm px-2.5 py-1 bg-green-100 text-green-800 rounded-full">28 Viajes</span>
-                    </li>
-                </ul>
+                <ul class="space-y-3" id="sindicatos-list"><li class="text-gray-400 text-sm">Cargando...</li></ul>
             </div>
         </section>
 
+        <section class="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-purple-500">
+            <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Ingresos Hoy</p>
+            <p id="ingresos-hoy" class="text-4xl font-extrabold text-gray-800">--</p>
+            <p class="text-xs text-gray-500 mt-1">Bs. acumulados</p>
+        </section>
         <footer class="text-center text-xs text-gray-500 pt-4 pb-2">
             Última actualización: <span id="last-update" class="font-mono">--</span> | Apolo Logistics Platform
         </footer>
@@ -87,12 +79,12 @@
     <script>
         // --- CONFIGURACIÓN ---
         // Cambia esto por la IP de tu Raspberry Pi si accedes desde el móvil
-        const API_URL = "http://localhost:8000/monitor/status"; 
+        const API_URL = `http://${location.hostname}:8000/monitor/status`; 
         const UPDATE_INTERVAL_MS = 15000; // Actualizar cada 15 segundos
 
         // --- INICIALIZACIÓN DEL MAPA ---
         // Centrado por defecto en La Paz, Bolivia (Ajusta según tu zona de Apolo)
-        const map = L.map('map').setView([-16.500, -68.150], 13); 
+        const map = L.map('map').setView([-14.7184, -68.4122], 15); 
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
@@ -130,6 +122,7 @@
                 document.getElementById('conductores-online').innerText = data.conductores_online;
                 document.getElementById('pedidos-esperando').innerText = data.pedidos_esperando;
                 document.getElementById('exito-hoy').innerText = data.total_exito_hoy;
+                document.getElementById('ingresos-hoy').innerText = 'Bs. ' + data.ingresos_hoy;
 
                 // 2. Manejo de Alertas Críticas (Pedidos Esperando)
                 const pendientesCard = document.getElementById('pendientes-card');
@@ -169,6 +162,25 @@
                 statusIndicator.classList.add('bg-green-500');
                 const now = new Date();
                 lastUpdateSpan.innerText = now.toLocaleTimeString();
+
+                // Cargar sindicatos desde API real
+                const resSind = await fetch(`http://${location.hostname}:8000/stats/sindicatos?periodo=dia`);
+                const sindicatos = await resSind.json();
+                const colors = ['yellow','blue','green','purple','red'];
+                const list = document.getElementById('sindicatos-list');
+                list.innerHTML = sindicatos.map((s, i) => {
+                    const c = colors[i % colors.length];
+                    return `<li class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <div>
+                            <span class="font-medium">${s.nombre}</span>
+                            <span class="block text-xs text-gray-400">${s.zona}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm px-2.5 py-1 bg-${c}-100 text-${c}-800 rounded-full">${s.total_viajes} Viajes</span>
+                            <span class="block text-xs text-gray-400 mt-1">Bs. ${s.ingresos}</span>
+                        </div>
+                    </li>`;
+                }).join('');
 
             } catch (error) {
                 // Indicador visual de "Error"
