@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apolo - Monitoreo de Operaciones en Vivo</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        /* Ajuste de altura para el mapa */
+        #map { height: 350px; border-radius: 0.75rem; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans antialiased text-gray-900">
+
+    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
+        <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-yellow-600">Apolo <span class="text-sm font-normal text-gray-500">v1.0 - Live</span></h1>
+            <div id="status-indicator" class="w-4 h-4 rounded-full bg-green-500 shadow-lg"></div>
+        </div>
+    </header>
+
+    <main class="p-4 md:p-8 space-y-6">
+
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            
+            <div class="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-yellow-500 transform hover:scale-105 transition-transform duration-300">
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Viajes en Curso</p>
+                <p id="viajes-activos" class="text-4xl font-extrabold text-gray-800">--</p>
+                <p class="text-xs text-green-600 mt-1">▲ 12% vs. Ayer</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-blue-500 transform hover:scale-105 transition-transform duration-300">
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Conductores Conectados</p>
+                <p id="conductores-online" class="text-4xl font-extrabold text-gray-800">--</p>
+                <p class="text-xs text-gray-500 mt-1">Últimos 5 min.</p>
+            </div>
+
+            <div id="pendientes-card" class="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-gray-300 transform hover:scale-105 transition-transform duration-300">
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Pedidos Esperando</p>
+                <p id="pedidos-esperando" class="text-4xl font-extrabold text-gray-800">--</p>
+                <p id="pendientes-msg" class="text-xs text-gray-500 mt-1">Normal</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-green-500 transform hover:scale-105 transition-transform duration-300">
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Éxito Total (Hoy)</p>
+                <p id="exito-hoy" class="text-4xl font-extrabold text-gray-800">--</p>
+                <p class="text-xs text-gray-500 mt-1">Viajes Finalizados</p>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div class="bg-white p-4 rounded-2xl shadow-lg md:col-span-2">
+                <h2 class="text-lg font-semibold mb-4 text-gray-700">Mapa de Calor: Pedidos Pendientes</h2>
+                <div id="map" class="shadow-inner border border-gray-200"></div>
+                <p class="text-xs text-gray-500 mt-2 text-center">Ubicaciones aproximadas basadas en GPS del pedido.</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <h2 class="text-lg font-semibold mb-4 text-gray-700">Rendimiento por Sindicato (Hoy)</h2>
+                <ul class="space-y-3">
+                    <li class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <span class="font-medium">Apolo Central</span>
+                        <span class="text-sm px-2.5 py-1 bg-yellow-100 text-yellow-800 rounded-full">45 Viajes</span>
+                    </li>
+                    <li class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <span class="font-medium">Norte Express</span>
+                        <span class="text-sm px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full">32 Viajes</span>
+                    </li>
+                    <li class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <span class="font-medium">Sur Delibery</span>
+                        <span class="text-sm px-2.5 py-1 bg-green-100 text-green-800 rounded-full">28 Viajes</span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <footer class="text-center text-xs text-gray-500 pt-4 pb-2">
+            Última actualización: <span id="last-update" class="font-mono">--</span> | Apolo Logistics Platform
+        </footer>
+
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <script>
+        // --- CONFIGURACIÓN ---
+        // Cambia esto por la IP de tu Raspberry Pi si accedes desde el móvil
+        const API_URL = "http://localhost:8000/monitor/status"; 
+        const UPDATE_INTERVAL_MS = 15000; // Actualizar cada 15 segundos
+
+        // --- INICIALIZACIÓN DEL MAPA ---
+        // Centrado por defecto en La Paz, Bolivia (Ajusta según tu zona de Apolo)
+        const map = L.map('map').setView([-16.500, -68.150], 13); 
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Capa para los marcadores de pedidos pendientes (limpiar antes de actualizar)
+        const pendingOrdersLayer = L.layerGroup().addTo(map);
+
+        // Icono personalizado para pedidos pendientes (Color Amarillo Apolo)
+        const pendingIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/1004/1004144.png', // Icono de motito/paquete
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+
+        // --- FUNCIÓN DE ACTUALIZACIÓN DE DATOS ---
+        async function updateDashboard() {
+            const statusIndicator = document.getElementById('status-indicator');
+            const lastUpdateSpan = document.getElementById('last-update');
+
+            try {
+                // Indicador visual de "Cargando..."
+                statusIndicator.classList.remove('bg-green-500', 'bg-red-500');
+                statusIndicator.classList.add('bg-yellow-500');
+
+                // Llamada real a tu API de FastAPI
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('Error al conectar con la API');
+                
+                const data = await response.json();
+
+                // 1. Actualizar KPIs en pantalla
+                document.getElementById('viajes-activos').innerText = data.viajes_en_curso;
+                document.getElementById('conductores-online').innerText = data.conductores_online;
+                document.getElementById('pedidos-esperando').innerText = data.pedidos_esperando;
+                document.getElementById('exito-hoy').innerText = data.total_exito_hoy;
+
+                // 2. Manejo de Alertas Críticas (Pedidos Esperando)
+                const pendientesCard = document.getElementById('pendientes-card');
+                const pendientesMsg = document.getElementById('pendientes-msg');
+
+                if (data.alerta_critica) {
+                    pendientesCard.classList.remove('border-gray-300');
+                    pendientesCard.classList.add('border-red-500', 'bg-red-50');
+                    pendientesMsg.innerText = "🚨 ¡SATURACIÓN DE PEDIDOS!";
+                    pendientesMsg.classList.add('text-red-700', 'font-bold');
+                } else {
+                    pendientesCard.classList.remove('border-red-500', 'bg-red-50');
+                    pendientesCard.classList.add('border-gray-300');
+                    pendientesMsg.innerText = "Normal";
+                    pendientesMsg.classList.remove('text-red-700', 'font-bold');
+                }
+
+                // 3. Actualizar Mapa (Pedidos Pendientes)
+                pendingOrdersLayer.clearLayers(); // Limpiar marcadores viejos
+
+                // Asumiendo que data incluye un array 'pedidos_coordenadas' de la forma [[lat, lon], ...]
+                // Si aún no lo tienes implementado en el backend, esta sección no hará nada.
+                if (data.pedidos_coordenadas && data.pedidos_coordenadas.length > 0) {
+                    data.pedidos_coordenadas.forEach(coord => {
+                        L.marker([coord[0], coord[1]], {icon: pendingIcon})
+                         .addTo(pendingOrdersLayer)
+                         .bindPopup("<b>Pedido Pendiente</b><br>Esperando asignación.");
+                    });
+                    
+                    // Ajustar el zoom del mapa para ver todos los pedidos pendientes
+                    // const group = new L.featureGroup(pendingOrdersLayer.getLayers());
+                    // map.fitBounds(group.getBounds().pad(0.1)); 
+                }
+
+                // Indicador visual de "Conectado" y Timestamp
+                statusIndicator.classList.remove('bg-yellow-500');
+                statusIndicator.classList.add('bg-green-500');
+                const now = new Date();
+                lastUpdateSpan.innerText = now.toLocaleTimeString();
+
+            } catch (error) {
+                // Indicador visual de "Error"
+                console.error("Dashboard Error:", error);
+                statusIndicator.classList.remove('bg-green-500', 'bg-yellow-500');
+                statusIndicator.classList.add('bg-red-500');
+                lastUpdateSpan.innerText = "Error de conexión";
+            }
+        }
+
+        // --- INICIO AUTOMÁTICO ---
+        // Ejecutar inmediatamente al cargar la página
+        updateDashboard();
+
+        // Configurar el ciclo de actualización (Polling ligero para la Pi)
+        setInterval(updateDashboard, UPDATE_INTERVAL_MS);
+
+    </script>
+</body>
+</html>
