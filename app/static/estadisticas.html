@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>MotoApolo — Estadísticas</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:      #f5f3ee;
+  --surface: #ffffff;
+  --surface2:#f0ede6;
+  --border:  #e2ddd4;
+  --ink:     #1a1a18;
+  --muted:   #8a8778;
+  --accent:  #d4521a;
+  --gold:    #c9970a;
+  --teal:    #1a7a5e;
+  --blue:    #1a4a7a;
+  --syne:    'Syne', sans-serif;
+  --mono:    'DM Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--mono);
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--ink);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-family: var(--syne);
+  font-weight: 800;
+  font-size: 18px;
+  color: #f5f3ee;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.logo em {
+  color: var(--accent);
+  font-style: normal;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+select, .btn-refresh {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #f5f3ee;
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.15s;
+}
+
+select:hover, .btn-refresh:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+select option { background: #1a1a18; color: #f5f3ee; }
+
+.live-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #4caf50;
+  box-shadow: 0 0 6px #4caf50;
+  flex-shrink: 0;
+  animation: pulse-live 2s ease-in-out infinite;
+}
+
+@keyframes pulse-live {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+.last-update {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+}
+
+/* ── LAYOUT PRINCIPAL ── */
+main {
+  padding: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── KPI CARDS ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 24px 20px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+
+.kpi-card.k-orange::before { background: var(--accent); }
+.kpi-card.k-gold::before   { background: var(--gold); }
+.kpi-card.k-teal::before   { background: var(--teal); }
+.kpi-card.k-blue::before   { background: var(--blue); }
+
+.kpi-card:hover { transform: translateY(-2px); }
+
+.kpi-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-bottom: 10px;
+}
+
+.kpi-value {
+  font-family: var(--syne);
+  font-weight: 800;
+  font-size: 40px;
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+}
+
+.kpi-value small {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+.kpi-sub {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.kpi-icon {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  font-size: 28px;
+  opacity: 0.12;
+}
+
+/* ── SECCIÓN TÍTULO ── */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-family: var(--syne);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.section-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── GRID DE GRÁFICAS ── */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 24px;
+}
+
+.chart-title {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 20px;
+}
+
+.chart-wrap {
+  position: relative;
+  height: 220px;
+}
+
+/* ── TABLAS ── */
+.tables-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 24px;
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+thead th {
+  text-align: left;
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 400;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface2); }
+
+tbody td {
+  padding: 10px 0;
+  color: var(--ink);
+}
+
+.td-num {
+  font-family: var(--syne);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.td-muted { color: var(--muted); }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.badge-fin  { background: rgba(26,122,94,0.1);  color: var(--teal); }
+.badge-asig { background: rgba(201,151,10,0.1); color: var(--gold); }
+.badge-viaj { background: rgba(26,74,122,0.1);  color: var(--blue); }
+.badge-acep { background: rgba(212,82,26,0.12); color: var(--accent); }
+
+/* ── TABLA SINDICATOS ── */
+.sind-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.sind-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 16px;
+  text-align: center;
+  transition: transform 0.15s;
+}
+
+.sind-card:hover { transform: translateY(-2px); }
+
+.sind-name {
+  font-family: var(--syne);
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.sind-zona {
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+.sind-num {
+  font-family: var(--syne);
+  font-weight: 800;
+  font-size: 28px;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.sind-num-label {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+  margin-bottom: 10px;
+}
+
+.sind-bar-wrap {
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.sind-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* ── ESTADO CARGA ── */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ── HISTORIAL FULL WIDTH ── */
+.historial-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 24px;
+  overflow-x: auto;
+}
+
+.historial-card table thead th:last-child,
+.historial-card table tbody td:last-child {
+  text-align: right;
+}
+
+/* Animación entrada */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.kpi-card, .chart-card, .table-card, .sind-card, .historial-card {
+  animation: fadeUp 0.4s ease both;
+}
+
+.kpi-card:nth-child(1) { animation-delay: 0.05s; }
+.kpi-card:nth-child(2) { animation-delay: 0.10s; }
+.kpi-card:nth-child(3) { animation-delay: 0.15s; }
+.kpi-card:nth-child(4) { animation-delay: 0.20s; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">MOTO<em>APOLO</em> <span style="font-weight:300;font-size:13px;color:rgba(255,255,255,0.4);margin-left:8px">estadísticas</span></div>
+  <div class="header-controls">
+    <select id="sel-periodo" onchange="cargarTodo()">
+      <option value="dia">Hoy</option>
+      <option value="semana">Esta semana</option>
+      <option value="mes">Este mes</option>
+    </select>
+    <select id="sel-sindicato" onchange="cargarTodo()">
+      <option value="">Todos los sindicatos</option>
+      <option value="1">Sindicato 1</option>
+      <option value="2">Sindicato 2</option>
+      <option value="3">Sindicato 3</option>
+      <option value="4">Sindicato 4</option>
+      <option value="5">Sindicato 5</option>
+    </select>
+    <button class="btn-refresh" onclick="cargarTodo()">↺ Actualizar</button>
+    <div class="live-dot"></div>
+    <span class="last-update" id="last-update">—</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card k-orange">
+      <div class="kpi-icon">🏍</div>
+      <div class="kpi-label">Total viajes</div>
+      <div class="kpi-value" id="kpi-total">—</div>
+      <div class="kpi-sub" id="kpi-sub-total">cargando...</div>
+    </div>
+    <div class="kpi-card k-teal">
+      <div class="kpi-icon">✓</div>
+      <div class="kpi-label">Finalizados</div>
+      <div class="kpi-value" id="kpi-fin">—</div>
+      <div class="kpi-sub" id="kpi-sub-fin">cargando...</div>
+    </div>
+    <div class="kpi-card k-gold">
+      <div class="kpi-icon">Bs</div>
+      <div class="kpi-label">Ingresos totales</div>
+      <div class="kpi-value" id="kpi-bs">—<small>Bs.</small></div>
+      <div class="kpi-sub" id="kpi-sub-bs">cargando...</div>
+    </div>
+    <div class="kpi-card k-blue">
+      <div class="kpi-icon">⌀</div>
+      <div class="kpi-label">Tarifa promedio</div>
+      <div class="kpi-value" id="kpi-prom">—<small>Bs.</small></div>
+      <div class="kpi-sub" id="kpi-sub-prom">cargando...</div>
+    </div>
+  </div>
+
+  <!-- Gráficas -->
+  <div>
+    <div class="section-header">
+      <div class="section-title">Actividad por hora</div>
+      <div class="section-line"></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Viajes por hora del día</div>
+        <div class="chart-wrap">
+          <canvas id="chart-horas"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Destinos más frecuentes</div>
+        <div class="chart-wrap">
+          <canvas id="chart-destinos"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sindicatos -->
+  <div>
+    <div class="section-header">
+      <div class="section-title">Por sindicato</div>
+      <div class="section-line"></div>
+    </div>
+    <div class="sind-grid" id="sind-grid">
+      <div class="loading">Cargando sindicatos...</div>
+    </div>
+  </div>
+
+  <!-- Tablas -->
+  <div>
+    <div class="section-header">
+      <div class="section-title">Ranking conductores</div>
+      <div class="section-line"></div>
+    </div>
+    <div class="tables-grid">
+      <div class="table-card">
+        <div class="chart-title">Top conductores por viajes</div>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Conductor</th>
+              <th>Placa</th>
+              <th>Viajes</th>
+              <th>Ingresos</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-conductores">
+            <tr><td colspan="5" class="loading">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-card">
+        <div class="chart-title">Destinos detalle</div>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Destino</th>
+              <th>Viajes</th>
+              <th>Ingresos</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-destinos">
+            <tr><td colspan="4" class="loading">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historial -->
+  <div>
+    <div class="section-header">
+      <div class="section-title">Historial de viajes</div>
+      <div class="section-line"></div>
+    </div>
+    <div class="historial-card">
+      <table>
+        <thead>
+          <tr>
+            <th>#ID</th>
+            <th>Conductor</th>
+            <th>Pasajero</th>
+            <th>Destino</th>
+            <th>Sindicato</th>
+            <th>Estado</th>
+            <th>Hora</th>
+            <th>Tarifa</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-historial">
+          <tr><td colspan="8" class="loading">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const API = `http://${location.hostname}:8000`;
+let chartHoras = null;
+let chartDestinos = null;
+
+function params() {
+  const p = document.getElementById('sel-periodo').value;
+  const s = document.getElementById('sel-sindicato').value;
+  let q = `periodo=${p}`;
+  if (s) q += `&sindicato_id=${s}`;
+  return q;
+}
+
+async function get(url) {
+  const res = await fetch(`${API}${url}`);
+  return res.json();
+}
+
+async function cargarTodo() {
+  await Promise.all([
+    cargarResumen(),
+    cargarHoras(),
+    cargarDestinos(),
+    cargarSindicatos(),
+    cargarConductores(),
+    cargarHistorial(),
+  ]);
+  const now = new Date().toLocaleTimeString('es-BO', { hour12: false });
+  document.getElementById('last-update').textContent = `actualizado ${now}`;
+}
+
+// ── RESUMEN ──────────────────────────────────
+async function cargarResumen() {
+  const d = await get(`/stats/resumen?${params()}`);
+  document.getElementById('kpi-total').innerHTML = d.total_viajes;
+  document.getElementById('kpi-fin').innerHTML   = d.finalizados;
+  document.getElementById('kpi-bs').innerHTML    = `${d.ingresos_total}<small>Bs.</small>`;
+  document.getElementById('kpi-prom').innerHTML  = `${d.tarifa_promedio}<small>Bs.</small>`;
+
+  const pct = d.total_viajes > 0
+    ? Math.round(d.finalizados / d.total_viajes * 100)
+    : 0;
+  document.getElementById('kpi-sub-total').textContent =
+    `${d.en_curso} en curso · ${d.cancelados} cancelados`;
+  document.getElementById('kpi-sub-fin').textContent =
+    `${pct}% tasa de completado`;
+  document.getElementById('kpi-sub-bs').textContent =
+    `período: ${d.periodo}`;
+  document.getElementById('kpi-sub-prom').textContent =
+    `sobre ${d.finalizados} viajes finalizados`;
+}
+
+// ── GRÁFICA HORAS ────────────────────────────
+async function cargarHoras() {
+  const p  = document.getElementById('sel-periodo').value;
+  const s  = document.getElementById('sel-sindicato').value;
+  let url  = `/stats/por-hora`;
+  if (s) url += `?sindicato_id=${s}`;
+
+  const data = await get(url);
+  const labels   = data.map(h => h.label);
+  const totales  = data.map(h => h.total);
+  const finales  = data.map(h => h.finalizados);
+
+  const ctx = document.getElementById('chart-horas').getContext('2d');
+  if (chartHoras) chartHoras.destroy();
+
+  chartHoras = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Total viajes',
+          data: totales,
+          backgroundColor: 'rgba(212,82,26,0.15)',
+          borderColor: 'rgba(212,82,26,0.6)',
+          borderWidth: 1,
+          borderRadius: 2,
+        },
+        {
+          label: 'Finalizados',
+          data: finales,
+          backgroundColor: 'rgba(26,122,94,0.7)',
+          borderColor: 'rgba(26,122,94,1)',
+          borderWidth: 0,
+          borderRadius: 2,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            font: { family: 'DM Mono', size: 11 },
+            color: '#8a8778',
+            boxWidth: 12,
+          }
+        },
+        tooltip: {
+          backgroundColor: '#1a1a18',
+          titleFont: { family: 'Syne', size: 13 },
+          bodyFont:  { family: 'DM Mono', size: 11 },
+          padding: 10,
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { font: { family: 'DM Mono', size: 9 }, color: '#8a8778',
+                   maxTicksLimit: 12 }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(0,0,0,0.06)' },
+          ticks: { font: { family: 'DM Mono', size: 10 }, color: '#8a8778',
+                   stepSize: 1 }
+        }
+      }
+    }
+  });
+}
+
+// ── GRÁFICA DESTINOS ─────────────────────────
+async function cargarDestinos() {
+  const data = await get(`/stats/destinos?${params()}`);
+  const labels = data.map(d => d.destino);
+  const viajes = data.map(d => d.viajes);
+
+  const colors = [
+    'rgba(212,82,26,0.8)',
+    'rgba(201,151,10,0.8)',
+    'rgba(26,122,94,0.8)',
+    'rgba(26,74,122,0.8)',
+    'rgba(122,26,94,0.8)',
+    'rgba(82,122,26,0.8)',
+    'rgba(26,94,122,0.8)',
+    'rgba(122,82,26,0.8)',
+    'rgba(94,26,122,0.8)',
+    'rgba(26,122,82,0.8)',
+  ];
+
+  const ctx = document.getElementById('chart-destinos').getContext('2d');
+  if (chartDestinos) chartDestinos.destroy();
+
+  chartDestinos = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data: viajes,
+        backgroundColor: colors.slice(0, labels.length),
+        borderWidth: 2,
+        borderColor: '#ffffff',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            font: { family: 'DM Mono', size: 10 },
+            color: '#8a8778',
+            boxWidth: 10,
+            padding: 8,
+          }
+        },
+        tooltip: {
+          backgroundColor: '#1a1a18',
+          titleFont: { family: 'Syne', size: 12 },
+          bodyFont:  { family: 'DM Mono', size: 11 },
+          padding: 10,
+        }
+      }
+    }
+  });
+
+  // Tabla destinos
+  const tbody = document.getElementById('tbody-destinos');
+  tbody.innerHTML = data.map((d, i) => `
+    <tr>
+      <td class="td-muted">${i + 1}</td>
+      <td>${d.destino}</td>
+      <td class="td-num">${d.viajes}</td>
+      <td class="td-num" style="color:var(--gold)">${d.ingresos} Bs.</td>
+    </tr>
+  `).join('') || '<tr><td colspan="4" class="td-muted">Sin datos</td></tr>';
+}
+
+// ── SINDICATOS ───────────────────────────────
+async function cargarSindicatos() {
+  const data = await get(`/stats/sindicatos?${params()}`);
+  const maxViajes = Math.max(...data.map(s => s.total_viajes), 1);
+
+  document.getElementById('sind-grid').innerHTML = data.map(s => {
+    const pct = Math.round(s.total_viajes / maxViajes * 100);
+    return `
+    <div class="sind-card">
+      <div class="sind-name">S${s.sindicato_id}</div>
+      <div class="sind-zona">${s.zona}</div>
+      <div class="sind-num">${s.total_viajes}</div>
+      <div class="sind-num-label">viajes</div>
+      <div class="sind-bar-wrap">
+        <div class="sind-bar" style="width:${pct}%"></div>
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:var(--muted)">
+        ${s.finalizados} fin · Bs. ${s.ingresos}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── CONDUCTORES ──────────────────────────────
+async function cargarConductores() {
+  const data = await get(`/stats/conductores?${params()}`);
+  const tbody = document.getElementById('tbody-conductores');
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="td-muted">Sin datos en este período</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map((c, i) => `
+    <tr>
+      <td class="td-muted">${i + 1}</td>
+      <td>
+        <div style="font-weight:500">${c.nombre}</div>
+        <div style="font-size:10px;color:var(--muted)">S${c.sindicato_id}</div>
+      </td>
+      <td class="td-muted">${c.placa}</td>
+      <td class="td-num">${c.viajes}</td>
+      <td class="td-num" style="color:var(--teal)">${c.ingresos} Bs.</td>
+    </tr>
+  `).join('');
+}
+
+// ── HISTORIAL ────────────────────────────────
+async function cargarHistorial() {
+  const data = await get(`/stats/historial?${params()}&limit=20`);
+  const tbody = document.getElementById('tbody-historial');
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="td-muted">Sin viajes en este período</td></tr>';
+    return;
+  }
+
+  const badgeClass = {
+    FINALIZADO: 'badge-fin',
+    ASIGNADO:   'badge-asig',
+    EN_VIAJE:   'badge-viaj',
+    ACEPTADO:   'badge-acep',
+  };
+
+  tbody.innerHTML = data.map(r => {
+    const hora = r.created_at
+      ? new Date(r.created_at).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit', hour12: false })
+      : '—';
+    const cls = badgeClass[r.status] || 'badge-asig';
+    return `
+    <tr>
+      <td class="td-muted">#${r.ride_id}</td>
+      <td>
+        <div style="font-weight:500">${r.driver_nombre}</div>
+        <div style="font-size:10px;color:var(--muted)">${r.driver_placa}</div>
+      </td>
+      <td class="td-muted">${r.passenger_phone}</td>
+      <td>${r.destino || '—'}</td>
+      <td class="td-muted">S${r.sindicato_id || '—'}</td>
+      <td><span class="badge ${cls}">${r.status}</span></td>
+      <td class="td-muted">${hora}</td>
+      <td class="td-num" style="color:var(--gold)">${r.tarifa} Bs.</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── INIT ────────────────────────────────────
+cargarTodo();
+setInterval(cargarTodo, 60000);
+</script>
+</body>
+</html>

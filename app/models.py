@@ -1,5 +1,5 @@
 # app/models.py
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -69,3 +69,9 @@ class Ride(Base):
     updated_at  = Column(DateTime(timezone=True), onupdate=func.now())
 
     conductor = relationship("Driver", back_populates="viajes")
+
+    __table_args__ = (
+        Index("ix_rides_driver_status_fecha",  "driver_id",    "status", "created_at"),
+        Index("ix_rides_sind_status_fecha",    "sindicato_id", "status", "created_at"),
+        Index("ix_rides_created_at",           "created_at"),
+    )
