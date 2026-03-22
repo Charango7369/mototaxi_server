@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0f1117"/>
+<title>MotoApolo — Pedir Mototaxi</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0f1117;
+  --card:    #161b26;
+  --card2:   #1e2535;
+  --border:  #2a3350;
+  --accent:  #f5c842;
+  --green:   #2ecc71;
+  --red:     #e74c3c;
+  --blue:    #4a9eff;
+  --text:    #eef0f8;
+  --muted:   #5a6480;
+  --syne:    'Syne', sans-serif;
+  --dm:      'DM Sans', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--dm);
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* ── FONDO DECORATIVO ── */
+.bg-decoration {
+  position: fixed;
+  top: -120px; right: -120px;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bg-decoration2 {
+  position: fixed;
+  bottom: -100px; left: -100px;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(74,158,255,0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── CONTENEDOR PRINCIPAL ── */
+.container {
+  width: 100%;
+  max-width: 420px;
+  padding: 0 20px 40px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── HEADER ── */
+.app-header {
+  text-align: center;
+  padding: 48px 0 32px;
+}
+
+.moto-hero {
+  font-size: 64px;
+  display: block;
+  margin-bottom: 12px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,100% { transform: translateY(0) rotate(-3deg); }
+  50%      { transform: translateY(-12px) rotate(3deg); }
+}
+
+.brand {
+  font-family: var(--syne);
+  font-weight: 800;
+  font-size: 32px;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+}
+
+.brand span { color: var(--text); }
+
+.brand-tagline {
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* ── CARD FORMULARIO ── */
+.form-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: slideUp 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.field-wrap { display: flex; flex-direction: column; gap: 6px; }
+
+.field-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 500;
+}
+
+.field-input {
+  background: var(--card2);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-family: var(--dm);
+  font-size: 16px;
+  padding: 14px 16px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+
+.field-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(245,200,66,0.1);
+}
+
+.field-input::placeholder { color: var(--muted); }
+
+select.field-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235a6480' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  cursor: pointer;
+}
+
+select.field-input option { background: #161b26; }
+
+/* Destinos rápidos */
+.destinos-rapidos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.chip {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.chip:hover, .chip.active {
+  background: rgba(245,200,66,0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── BOTÓN PEDIR ── */
+.btn-pedir {
+  width: 100%;
+  background: var(--accent);
+  color: #0f1117;
+  font-family: var(--syne);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 14px;
+  padding: 20px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.2s, opacity 0.2s;
+  box-shadow: 0 6px 24px rgba(245,200,66,0.3);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-pedir:active { transform: scale(0.97); }
+.btn-pedir:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── PANTALLA BUSCANDO ── */
+#screen-buscando {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 48px 24px;
+  gap: 24px;
+}
+
+.spinner-wrap {
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  background: rgba(245,200,66,0.06);
+  border: 2px solid rgba(245,200,66,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 44px;
+  animation: spin-pulse 2s ease-in-out infinite;
+  position: relative;
+}
+
+@keyframes spin-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(245,200,66,0.3); }
+  50%      { box-shadow: 0 0 0 20px rgba(245,200,66,0); }
+}
+
+.spinner-ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--accent);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.buscando-title {
+  font-family: var(--syne);
+  font-weight: 700;
+  font-size: 22px;
+}
+
+.buscando-sub {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 280px;
+}
+
+.btn-cancelar {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--dm);
+  font-size: 14px;
+  border-radius: 10px;
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-cancelar:hover { border-color: var(--red); color: var(--red); }
+
+/* ── PANTALLA CONFIRMACIÓN ── */
+#screen-confirmado {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  animation: slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.confirm-banner {
+  background: var(--green);
+  color: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--syne);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+}
+
+.confirm-body {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 16px 16px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.confirm-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.confirm-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: var(--card2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.confirm-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 2px;
+}
+
+.confirm-value {
+  font-family: var(--syne);
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.confirm-divider {
+  height: 1px;
+  background: var(--border);
+}
+
+.tarifa-big {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--card2);
+  border-radius: 10px;
+}
+
+.tarifa-big-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tarifa-big-value {
+  font-family: var(--syne);
+  font-weight: 800;
+  font-size: 32px;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.tarifa-big-value small {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+.btn-nuevo {
+  width: 100%;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--syne);
+  font-weight: 700;
+  font-size: 15px;
+  border-radius: 14px;
+  padding: 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: center;
+}
+
+.btn-nuevo:hover { background: var(--border); }
+
+/* ── PANTALLA SIN CONDUCTOR ── */
+#screen-sin-conductor {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 24px;
+  gap: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.sin-conductor-icon { font-size: 52px; }
+
+.sin-conductor-title {
+  font-family: var(--syne);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--text);
+}
+
+.sin-conductor-sub {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 260px;
+}
+
+.btn-reintentar {
+  background: var(--accent);
+  color: #0f1117;
+  font-family: var(--syne);
+  font-weight: 700;
+  font-size: 15px;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 32px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.btn-reintentar:active { transform: scale(0.97); }
+
+/* ── ERROR ── */
+.error-msg {
+  color: var(--red);
+  font-size: 13px;
+  text-align: center;
+  min-height: 18px;
+  margin-top: -8px;
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  z-index: 100;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── FOOTER ── */
+.app-footer {
+  text-align: center;
+  padding: 24px 0 8px;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+</style>
+</head>
+<body>
+
+<div class="bg-decoration"></div>
+<div class="bg-decoration2"></div>
+
+<div class="container">
+
+  <!-- ══ HEADER ══════════════════════════════ -->
+  <div class="app-header">
+    <span class="moto-hero">🛵</span>
+    <div class="brand">MOTO<span>APOLO</span></div>
+    <div class="brand-tagline">Tu mototaxi en segundos</div>
+  </div>
+
+  <!-- ══ FORMULARIO ══════════════════════════ -->
+  <div id="screen-form">
+    <div class="form-card">
+
+      <div class="field-wrap">
+        <label class="field-label">Tu número de teléfono</label>
+        <input type="tel" id="input-telefono" class="field-input"
+               placeholder="70012345" maxlength="8"/>
+      </div>
+
+      <div class="field-wrap">
+        <label class="field-label">Sindicato más cercano</label>
+        <select id="input-sindicato" class="field-input">
+          <option value="1">Sindicato 1 — Zona norte</option>
+          <option value="2">Sindicato 2 — Zona centro</option>
+          <option value="3">Sindicato 3 — Zona sur</option>
+          <option value="4">Sindicato 4 — Zona mercado</option>
+          <option value="5">Sindicato 5 — Zona periférica</option>
+        </select>
+      </div>
+
+      <div class="field-wrap">
+        <label class="field-label">¿A dónde vas?</label>
+        <input type="text" id="input-destino" class="field-input"
+               placeholder="Ej: Mercado central, Hospital..."/>
+        <div class="destinos-rapidos">
+          <div class="chip" onclick="setDestino('Mercado central')">🛒 Mercado</div>
+          <div class="chip" onclick="setDestino('Hospital')">🏥 Hospital</div>
+          <div class="chip" onclick="setDestino('Plaza principal')">⛪ Plaza</div>
+          <div class="chip" onclick="setDestino('Colegio')">🏫 Colegio</div>
+          <div class="chip" onclick="setDestino('Aeropuerto')">✈️ Aeropuerto</div>
+          <div class="chip" onclick="setDestino('Terminal')">🚌 Terminal</div>
+        </div>
+      </div>
+
+      <div class="error-msg" id="error-msg"></div>
+
+      <button class="btn-pedir" id="btn-pedir" onclick="pedirMototaxi()">
+        <span>🏍️</span> Pedir Mototaxi
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ══ BUSCANDO ═════════════════════════════ -->
+  <div id="screen-buscando">
+    <div class="spinner-wrap">
+      🏍️
+      <div class="spinner-ring"></div>
+    </div>
+    <div class="buscando-title">Buscando mototaxi...</div>
+    <div class="buscando-sub">Estamos asignando el conductor más cercano de tu sindicato.</div>
+    <button class="btn-cancelar" onclick="cancelar()">Cancelar</button>
+  </div>
+
+  <!-- ══ CONFIRMADO ════════════════════════════ -->
+  <div id="screen-confirmado">
+    <div class="confirm-banner">
+      <span>✓</span>
+      <span>¡Mototaxi en camino!</span>
+    </div>
+    <div class="confirm-body">
+      <div class="confirm-row">
+        <div class="confirm-icon">🏍️</div>
+        <div>
+          <div class="confirm-label">Conductor</div>
+          <div class="confirm-value" id="conf-conductor">—</div>
+        </div>
+      </div>
+      <div class="confirm-divider"></div>
+      <div class="confirm-row">
+        <div class="confirm-icon">🪪</div>
+        <div>
+          <div class="confirm-label">Placa</div>
+          <div class="confirm-value" id="conf-placa">—</div>
+        </div>
+      </div>
+      <div class="confirm-divider"></div>
+      <div class="confirm-row">
+        <div class="confirm-icon">🏁</div>
+        <div>
+          <div class="confirm-label">Destino</div>
+          <div class="confirm-value" id="conf-destino">—</div>
+        </div>
+      </div>
+      <div class="confirm-divider"></div>
+      <div class="tarifa-big">
+        <div class="tarifa-big-label">Tarifa estimada</div>
+        <div class="tarifa-big-value" id="conf-tarifa">5<small>Bs.</small></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:-4px">
+        El conductor ya fue notificado y está en camino
+      </div>
+    </div>
+    <button class="btn-nuevo" onclick="nuevoViaje()">+ Pedir otro mototaxi</button>
+  </div>
+
+  <!-- ══ SIN CONDUCTOR ═════════════════════════ -->
+  <div id="screen-sin-conductor">
+    <div class="sin-conductor-icon">😔</div>
+    <div class="sin-conductor-title">Sin conductores disponibles</div>
+    <div class="sin-conductor-sub">
+      No hay mototaxistas disponibles en este momento en tu zona. Intenta en unos minutos.
+    </div>
+    <button class="btn-reintentar" onclick="nuevoViaje()">Reintentar</button>
+  </div>
+
+  <div class="app-footer">APOLO · PROVINCIA FRANZ TAMAYO · BOLIVIA</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = `http://${location.hostname}:8000`;
+
+// Coords fijas de Apolo (el pasajero está en la zona)
+// En una versión futura se puede usar geolocalización
+const APOLO_LAT = -14.7184;
+const APOLO_LON = -68.4122;
+
+function setDestino(destino) {
+  document.getElementById('input-destino').value = destino;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function mostrar(id) {
+  ['screen-form','screen-buscando','screen-confirmado','screen-sin-conductor']
+    .forEach(s => {
+      const el = document.getElementById(s);
+      el.style.display = s === id ? 'flex' : 'none';
+    });
+}
+
+async function pedirMototaxi() {
+  const tel      = document.getElementById('input-telefono').value.trim();
+  const sind     = document.getElementById('input-sindicato').value;
+  const destino  = document.getElementById('input-destino').value.trim();
+  const errEl    = document.getElementById('error-msg');
+
+  errEl.textContent = '';
+
+  if (!tel || tel.length < 7) {
+    errEl.textContent = 'Ingresa tu número de teléfono';
+    return;
+  }
+  if (!destino) {
+    errEl.textContent = 'Escribe tu destino o selecciona uno';
+    return;
+  }
+
+  mostrar('screen-buscando');
+
+  try {
+    const res = await fetch(`${API}/ride/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        passenger_phone: tel,
+        origin_lat:      APOLO_LAT,
+        origin_lon:      APOLO_LON,
+        destino:         destino,
+        sindicato_id:    parseInt(sind),
+        tarifa:          5.0
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.status === 'no_driver_available') {
+      mostrar('screen-sin-conductor');
+      return;
+    }
+
+    if (data.status === 'assigned') {
+      // Obtener datos del conductor
+      let nombre = '—', placa = '—';
+      try {
+        const driverRes = await fetch(`${API}/driver/${data.driver_id}`);
+        const driver    = await driverRes.json();
+        nombre = driver.nombre || '—';
+        placa  = driver.placa  || '—';
+      } catch(e) {}
+
+      document.getElementById('conf-conductor').textContent = nombre;
+      document.getElementById('conf-placa').textContent     = placa;
+      document.getElementById('conf-destino').textContent   = destino;
+      document.getElementById('conf-tarifa').innerHTML      = `5<small>Bs.</small>`;
+
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      mostrar('screen-confirmado');
+      toast('¡Conductor asignado! Está en camino 🏍️');
+    }
+
+  } catch(e) {
+    mostrar('screen-form');
+    document.getElementById('error-msg').textContent = 'Error de conexión con el servidor';
+  }
+}
+
+function cancelar() {
+  mostrar('screen-form');
+}
+
+function nuevoViaje() {
+  document.getElementById('input-destino').value = '';
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  document.getElementById('error-msg').textContent = '';
+  mostrar('screen-form');
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Enter en destino dispara el pedido
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('input-destino').addEventListener('keydown', e => {
+    if (e.key === 'Enter') pedirMototaxi();
+  });
+  mostrar('screen-form');
+});
+</script>
+</body>
+</html>
+
