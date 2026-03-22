@@ -601,7 +601,10 @@ select.field-input option { background: #161b26; }
 <div class="toast" id="toast"></div>
 
 <script>
-const API = `http://${location.hostname}:8000`;
+const isNgrok = location.hostname.includes('ngrok');
+const API = isNgrok
+  ? `${location.protocol}//${location.hostname}`
+  : `http://${location.hostname}:8000`;
 
 // Coords fijas de Apolo (el pasajero está en la zona)
 // En una versión futura se puede usar geolocalización
