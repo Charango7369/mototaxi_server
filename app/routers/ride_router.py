@@ -12,6 +12,9 @@ from app.dependencies import get_current_driver
 router = APIRouter(prefix="/ride", tags=["Rides"])
 
 
+# ─────────────────────────────
+# SOLICITAR VIAJE (pasajero)
+# ─────────────────────────────
 @router.post("/request")
 async def request_ride(
     data: RideRequest,
@@ -42,18 +45,76 @@ async def request_ride(
         manager.send_to_driver,
         driver_id,
         {
-            "event": "ride_assigned",
-            "ride_id": ride.id,
+            "event":           "ride_assigned",
+            "ride_id":         ride.id,
             "passenger_phone": data.passenger_phone,
-            "origin_lat": data.origin_lat,
-            "origin_lon": data.origin_lon,
-            "destino": data.destino,
-            "tarifa": data.tarifa
+            "origin_lat":      data.origin_lat,
+            "origin_lon":      data.origin_lon,
+            "destino":         data.destino,
+            "tarifa":          data.tarifa
         }
     )
     return {"status": "assigned", "ride_id": ride.id, "driver_id": driver_id}
 
 
+# ─────────────────────────────
+# VIAJES ACTIVOS (panel operador)
+# ─────────────────────────────
+@router.get("/activos")
+def rides_activos(
+    sindicato_id: int = None,
+    db: Session = Depends(get_db)
+):
+    q = db.query(Ride).filter(
+        Ride.status.in_(["ASIGNADO", "ACEPTADO", "EN_VIAJE"])
+    )
+    if sindicato_id:
+        q = q.filter(Ride.sindicato_id == sindicato_id)
+
+    rides = q.order_by(Ride.created_at.desc()).all()
+    return [
+        {
+            "ride_id":         r.id,
+            "driver_id":       r.driver_id,
+            "sindicato_id":    r.sindicato_id,
+            "passenger_phone": r.passenger_phone,
+            "destino":         r.destino,
+            "tarifa":          r.tarifa,
+            "status":          r.status,
+            "created_at":      r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in rides
+    ]
+
+
+# ─────────────────────────────
+# CANCELAR VIAJE
+# ─────────────────────────────
+@router.post("/{ride_id}/cancel")
+def cancel_ride(
+    ride_id: int,
+    db: Session = Depends(get_db)
+):
+    ride = db.query(Ride).filter(Ride.id == ride_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Viaje no encontrado")
+    if ride.status in ("FINALIZADO", "CANCELADO"):
+        raise HTTPException(status_code=400, detail=f"No se puede cancelar un viaje {ride.status}")
+
+    # Liberar al conductor
+    if ride.driver_id:
+        driver = db.query(Driver).filter(Driver.id == ride.driver_id).first()
+        if driver:
+            driver.estado = "DISPONIBLE"
+
+    ride.status = "CANCELADO"
+    db.commit()
+    return {"status": "CANCELADO", "ride_id": ride_id}
+
+
+# ─────────────────────────────
+# ACEPTAR VIAJE (conductor)
+# ─────────────────────────────
 @router.post("/{ride_id}/accept")
 def accept_ride(
     ride_id: int,
@@ -68,6 +129,9 @@ def accept_ride(
     return update_ride_status(db, ride_id, "ACEPTADO")
 
 
+# ─────────────────────────────
+# INICIAR VIAJE (conductor)
+# ─────────────────────────────
 @router.post("/{ride_id}/start")
 def start_ride(
     ride_id: int,
@@ -82,6 +146,9 @@ def start_ride(
     return update_ride_status(db, ride_id, "EN_VIAJE")
 
 
+# ─────────────────────────────
+# FINALIZAR VIAJE (conductor)
+# ─────────────────────────────
 @router.post("/{ride_id}/finish")
 def finish_ride(
     ride_id: int,

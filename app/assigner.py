@@ -14,7 +14,7 @@ def distance(lat1, lon1, lat2, lon2):
 
 
 def find_nearest_driver(db: Session, ride_request, sindicato_id: int = None):
-    query = db.query(Driver).filter(Driver.estado == "DISPONIBLE")
+    query = db.query(Driver).filter(Driver.estado == "DISPONIBLE", Driver.estado_registro == "APROBADO")
 
     if sindicato_id:
         query = query.filter(Driver.sindicato_id == sindicato_id)

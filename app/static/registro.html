@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0a0d14"/>
+<title>MotoApolo — Registro Conductor</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0a0d14;
+  --card:    #121620;
+  --card2:   #1a1f2e;
+  --border:  #252d42;
+  --accent:  #f5c842;
+  --green:   #2ecc71;
+  --red:     #e74c3c;
+  --blue:    #4a9eff;
+  --text:    #eef0f8;
+  --muted:   #5a6480;
+  --syne:    'Syne', sans-serif;
+  --dm:      'DM Sans', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--dm);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Fondo decorativo */
+.bg-glow {
+  position: fixed;
+  top: -200px; right: -200px;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245,200,66,0.05) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.container {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 0 20px 60px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── HEADER ── */
+.page-header {
+  padding: 36px 0 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.header-icon {
+  width: 64px; height: 64px;
+  border-radius: 18px;
+  background: rgba(245,200,66,0.1);
+  border: 1px solid rgba(245,200,66,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px;
+  margin-bottom: 4px;
+}
+
+.page-title {
+  font-family: var(--syne);
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+}
+
+.page-title em {
+  color: var(--accent);
+  font-style: normal;
+}
+
+.page-sub {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+/* ── STEPS INDICATOR ── */
+.steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 28px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.step-dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--card2);
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--syne);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--muted);
+  transition: all 0.3s;
+}
+
+.step.active .step-dot {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0a0d14;
+}
+
+.step.done .step-dot {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.step-line {
+  width: 48px;
+  height: 2px;
+  background: var(--border);
+  margin: 0 4px;
+  margin-bottom: 20px;
+  transition: background 0.3s;
+}
+
+.step-line.done { background: var(--green); }
+
+.step-label {
+  font-size: 9px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.step.active .step-label { color: var(--accent); }
+.step.done .step-label { color: var(--green); }
+
+/* ── FORM CARD ── */
+.form-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px 24px;
+  display: none;
+  flex-direction: column;
+  gap: 20px;
+  animation: fadeIn 0.35s ease;
+}
+
+.form-section.active { display: flex; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.section-heading {
+  font-family: var(--syne);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text);
+  margin-bottom: -4px;
+}
+
+.section-heading span {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 8px;
+}
+
+/* ── CAMPOS ── */
+.field { display: flex; flex-direction: column; gap: 6px; }
+
+.field-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 500;
+}
+
+.field-input {
+  background: var(--card2);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-family: var(--dm);
+  font-size: 16px;
+  padding: 14px 16px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+
+.field-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(245,200,66,0.1);
+}
+
+.field-input::placeholder { color: var(--muted); }
+
+select.field-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235a6480' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  cursor: pointer;
+}
+
+select.field-input option { background: #121620; }
+
+/* ── FOTO UPLOAD ── */
+.foto-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.foto-preview {
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: var(--card2);
+  border: 2px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.2s;
+  position: relative;
+}
+
+.foto-preview:hover { border-color: var(--accent); }
+
+.foto-preview img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.foto-icon { font-size: 32px; }
+
+.foto-text {
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.3;
+}
+
+.foto-btn {
+  background: rgba(245,200,66,0.1);
+  border: 1px solid rgba(245,200,66,0.25);
+  color: var(--accent);
+  font-family: var(--dm);
+  font-size: 13px;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.foto-btn:hover { background: rgba(245,200,66,0.18); }
+
+.foto-opcional {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ── BOTONES NAV ── */
+.nav-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.btn-back {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--syne);
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 12px;
+  padding: 14px 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.btn-back:hover { border-color: var(--text); color: var(--text); }
+
+.btn-next {
+  flex: 1;
+  background: var(--accent);
+  color: #0a0d14;
+  font-family: var(--syne);
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px rgba(245,200,66,0.25);
+}
+
+.btn-next:active { transform: scale(0.97); }
+.btn-next:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── RESUMEN ── */
+.resumen-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.resumen-item:last-child { border-bottom: none; }
+
+.resumen-foto {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--card2);
+  border: 2px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+}
+
+.resumen-foto img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+
+.resumen-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 2px;
+}
+
+.resumen-valor {
+  font-family: var(--syne);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+/* ── PANTALLA ÉXITO ── */
+#screen-exito {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 24px;
+  gap: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  animation: fadeIn 0.4s ease;
+}
+
+.exito-icon {
+  width: 88px; height: 88px;
+  border-radius: 50%;
+  background: rgba(46,204,113,0.1);
+  border: 2px solid rgba(46,204,113,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px;
+}
+
+.exito-title {
+  font-family: var(--syne);
+  font-weight: 800;
+  font-size: 24px;
+  color: var(--green);
+}
+
+.exito-sub {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 280px;
+}
+
+.exito-steps {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.exito-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--card2);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.exito-step-num {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #0a0d14;
+  font-family: var(--syne);
+  font-weight: 700;
+  font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-ir-login {
+  width: 100%;
+  background: var(--accent);
+  color: #0a0d14;
+  font-family: var(--syne);
+  font-weight: 800;
+  font-size: 16px;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.btn-ir-login:active { transform: scale(0.97); }
+
+/* ── ERROR ── */
+.error-msg {
+  color: var(--red);
+  font-size: 12px;
+  text-align: center;
+  min-height: 16px;
+}
+
+.field-error {
+  border-color: var(--red) !important;
+  box-shadow: 0 0 0 3px rgba(231,76,60,0.1) !important;
+}
+</style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div class="header-icon">🏍️</div>
+    <div class="page-title">Registro <em>Conductor</em></div>
+    <div class="page-sub">Completa tu registro para unirte a la plataforma MotoApolo</div>
+  </div>
+
+  <!-- STEPS -->
+  <div class="steps" id="steps-indicator">
+    <div class="step active" id="step1">
+      <div class="step-dot">1</div>
+      <div class="step-label">Datos</div>
+    </div>
+    <div class="step-line" id="line1"></div>
+    <div class="step" id="step2">
+      <div class="step-dot">2</div>
+      <div class="step-label">Foto</div>
+    </div>
+    <div class="step-line" id="line2"></div>
+    <div class="step" id="step3">
+      <div class="step-dot">3</div>
+      <div class="step-label">Confirmar</div>
+    </div>
+  </div>
+
+  <!-- PASO 1: DATOS PERSONALES -->
+  <div class="form-section active" id="paso1">
+    <div class="section-heading">Tus datos personales</div>
+
+    <div class="field">
+      <label class="field-label">Nombre completo</label>
+      <input type="text" id="f-nombre" class="field-input" placeholder="Ej: Juan Carlos Quispe"/>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Número de teléfono</label>
+      <input type="tel" id="f-telefono" class="field-input" placeholder="70012345" maxlength="8"/>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Placa de tu moto</label>
+      <input type="text" id="f-placa" class="field-input" placeholder="Ej: ABC-123"
+             oninput="this.value=this.value.toUpperCase()"/>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Sindicato al que perteneces</label>
+      <select id="f-sindicato" class="field-input">
+        <option value="">— Selecciona tu sindicato —</option>
+        <option value="1">Sindicato 1 — Zona norte</option>
+        <option value="2">Sindicato 2 — Zona centro</option>
+        <option value="3">Sindicato 3 — Zona sur</option>
+        <option value="4">Sindicato 4 — Zona mercado</option>
+        <option value="5">Sindicato 5 — Zona periférica</option>
+      </select>
+    </div>
+
+    <div class="error-msg" id="error1"></div>
+
+    <button class="btn-next" onclick="irPaso2()">Continuar →</button>
+  </div>
+
+  <!-- PASO 2: FOTO -->
+  <div class="form-section" id="paso2">
+    <div class="section-heading">Tu foto <span>opcional</span></div>
+
+    <div class="foto-wrap">
+      <div class="foto-preview" id="foto-preview" onclick="document.getElementById('input-foto').click()">
+        <div class="foto-icon" id="foto-icon">📷</div>
+        <div class="foto-text" id="foto-text">Toca para<br>tomar foto</div>
+        <img id="foto-img" style="display:none"/>
+      </div>
+      <button class="foto-btn" onclick="document.getElementById('input-foto').click()">
+        📸 Seleccionar foto
+      </button>
+      <div class="foto-opcional">La foto ayuda a los pasajeros a identificarte</div>
+    </div>
+
+    <input type="file" id="input-foto" accept="image/*" capture="user"
+           style="display:none" onchange="previewFoto(this)"/>
+
+    <div class="nav-buttons">
+      <button class="btn-back" onclick="irPaso(1)">← Atrás</button>
+      <button class="btn-next" onclick="irPaso3()">Continuar →</button>
+    </div>
+  </div>
+
+  <!-- PASO 3: CONFIRMACIÓN -->
+  <div class="form-section" id="paso3">
+    <div class="section-heading">Confirma tus datos</div>
+
+    <div class="resumen-item">
+      <div class="resumen-foto" id="resumen-foto-wrap">
+        <span id="resumen-foto-icon">👤</span>
+        <img id="resumen-foto-img" style="display:none"/>
+      </div>
+      <div>
+        <div class="resumen-label">Conductor</div>
+        <div class="resumen-valor" id="res-nombre">—</div>
+      </div>
+    </div>
+
+    <div class="resumen-item">
+      <div style="font-size:22px;width:52px;text-align:center">📱</div>
+      <div>
+        <div class="resumen-label">Teléfono</div>
+        <div class="resumen-valor" id="res-telefono">—</div>
+      </div>
+    </div>
+
+    <div class="resumen-item">
+      <div style="font-size:22px;width:52px;text-align:center">🪪</div>
+      <div>
+        <div class="resumen-label">Placa</div>
+        <div class="resumen-valor" id="res-placa">—</div>
+      </div>
+    </div>
+
+    <div class="resumen-item">
+      <div style="font-size:22px;width:52px;text-align:center">🏘️</div>
+      <div>
+        <div class="resumen-label">Sindicato</div>
+        <div class="resumen-valor" id="res-sindicato">—</div>
+      </div>
+    </div>
+
+    <div class="error-msg" id="error3"></div>
+
+    <div class="nav-buttons">
+      <button class="btn-back" onclick="irPaso(2)">← Atrás</button>
+      <button class="btn-next" id="btn-enviar" onclick="enviarRegistro()">
+        ✓ Enviar registro
+      </button>
+    </div>
+  </div>
+
+  <!-- ÉXITO -->
+  <div id="screen-exito">
+    <div class="exito-icon">✓</div>
+    <div class="exito-title">¡Registro enviado!</div>
+    <div class="exito-sub">Tu solicitud fue recibida. El operador de tu sindicato la revisará pronto.</div>
+
+    <div class="exito-steps">
+      <div class="exito-step">
+        <div class="exito-step-num">1</div>
+        Tu registro fue enviado correctamente
+      </div>
+      <div class="exito-step">
+        <div class="exito-step-num">2</div>
+        El operador de tu sindicato lo aprobará
+      </div>
+      <div class="exito-step">
+        <div class="exito-step-num">3</div>
+        Recibirás viajes automáticamente al ser aprobado
+      </div>
+    </div>
+
+    <button class="btn-ir-login" onclick="irLogin()">Ir a la app del conductor</button>
+  </div>
+
+</div>
+
+<script>
+const API = location.hostname.includes('ngrok')
+  ? `${location.protocol}//${location.hostname}`
+  : `http://${location.hostname}:8000`;
+
+let fotoFile = null;
+let pasoActual = 1;
+
+const sindicatoNombres = {
+  "1": "Sindicato 1 — Zona norte",
+  "2": "Sindicato 2 — Zona centro",
+  "3": "Sindicato 3 — Zona sur",
+  "4": "Sindicato 4 — Zona mercado",
+  "5": "Sindicato 5 — Zona periférica"
+};
+
+function irPaso(n) {
+  document.getElementById(`paso${pasoActual}`).classList.remove('active');
+  pasoActual = n;
+  document.getElementById(`paso${n}`).classList.add('active');
+  actualizarSteps();
+  window.scrollTo(0, 0);
+}
+
+function actualizarSteps() {
+  for (let i = 1; i <= 3; i++) {
+    const step = document.getElementById(`step${i}`);
+    step.classList.remove('active', 'done');
+    if (i < pasoActual) step.classList.add('done');
+    else if (i === pasoActual) step.classList.add('active');
+  }
+  for (let i = 1; i <= 2; i++) {
+    const line = document.getElementById(`line${i}`);
+    line.classList.toggle('done', i < pasoActual);
+  }
+}
+
+function limpiarError(id) {
+  document.getElementById(id).textContent = '';
+}
+
+function irPaso2() {
+  limpiarError('error1');
+  const nombre   = document.getElementById('f-nombre').value.trim();
+  const telefono = document.getElementById('f-telefono').value.trim();
+  const placa    = document.getElementById('f-placa').value.trim();
+  const sind     = document.getElementById('f-sindicato').value;
+
+  let ok = true;
+
+  if (!nombre || nombre.length < 3) {
+    document.getElementById('error1').textContent = 'Ingresa tu nombre completo';
+    document.getElementById('f-nombre').classList.add('field-error');
+    ok = false;
+  } else document.getElementById('f-nombre').classList.remove('field-error');
+
+  if (!telefono || telefono.length < 7) {
+    document.getElementById('error1').textContent = 'Ingresa un número de teléfono válido';
+    document.getElementById('f-telefono').classList.add('field-error');
+    ok = false;
+  } else document.getElementById('f-telefono').classList.remove('field-error');
+
+  if (!placa || placa.length < 3) {
+    document.getElementById('error1').textContent = 'Ingresa la placa de tu moto';
+    document.getElementById('f-placa').classList.add('field-error');
+    ok = false;
+  } else document.getElementById('f-placa').classList.remove('field-error');
+
+  if (!sind) {
+    document.getElementById('error1').textContent = 'Selecciona tu sindicato';
+    document.getElementById('f-sindicato').classList.add('field-error');
+    ok = false;
+  } else document.getElementById('f-sindicato').classList.remove('field-error');
+
+  if (ok) irPaso(2);
+}
+
+function irPaso3() {
+  // Llenar resumen
+  document.getElementById('res-nombre').textContent    = document.getElementById('f-nombre').value.trim();
+  document.getElementById('res-telefono').textContent  = document.getElementById('f-telefono').value.trim();
+  document.getElementById('res-placa').textContent     = document.getElementById('f-placa').value.trim();
+  document.getElementById('res-sindicato').textContent = sindicatoNombres[document.getElementById('f-sindicato').value] || '—';
+
+  // Foto en resumen
+  if (fotoFile) {
+    document.getElementById('resumen-foto-icon').style.display = 'none';
+    const img = document.getElementById('resumen-foto-img');
+    img.src = URL.createObjectURL(fotoFile);
+    img.style.display = 'block';
+  }
+
+  irPaso(3);
+}
+
+function previewFoto(input) {
+  if (input.files && input.files[0]) {
+    fotoFile = input.files[0];
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('foto-icon').style.display = 'none';
+      document.getElementById('foto-text').style.display = 'none';
+      const img = document.getElementById('foto-img');
+      img.src = e.target.result;
+      img.style.display = 'block';
+    };
+    reader.readAsDataURL(fotoFile);
+  }
+}
+
+async function enviarRegistro() {
+  const btn = document.getElementById('btn-enviar');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  document.getElementById('error3').textContent = '';
+
+  const formData = new FormData();
+  formData.append('nombre',       document.getElementById('f-nombre').value.trim());
+  formData.append('telefono',     document.getElementById('f-telefono').value.trim());
+  formData.append('placa',        document.getElementById('f-placa').value.trim());
+  formData.append('sindicato_id', document.getElementById('f-sindicato').value);
+  if (fotoFile) formData.append('foto', fotoFile);
+
+  try {
+    const res = await fetch(`${API}/driver/registro`, {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      document.getElementById('error3').textContent = data.detail || 'Error al enviar el registro';
+      btn.disabled = false;
+      btn.textContent = '✓ Enviar registro';
+      return;
+    }
+
+    // Éxito
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    document.getElementById('paso3').classList.remove('active');
+    document.getElementById('steps-indicator').style.display = 'none';
+    document.getElementById('screen-exito').style.display = 'flex';
+    window.scrollTo(0, 0);
+
+  } catch(e) {
+    document.getElementById('error3').textContent = 'Error de conexión con el servidor';
+    btn.disabled = false;
+    btn.textContent = '✓ Enviar registro';
+  }
+}
+
+function irLogin() {
+  window.location.href = 'conductor.html';
+}
+</script>
+</body>
+</html>

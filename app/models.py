@@ -32,7 +32,9 @@ class Driver(Base):
     sindicato_id  = Column(Integer, ForeignKey("sindicatos.id"), nullable=False)
     lat           = Column(Float, default=0.0)
     lon           = Column(Float, default=0.0)
-    estado        = Column(String, default="DISPONIBLE")
+    estado           = Column(String, default="DISPONIBLE")
+    estado_registro  = Column(String, default="PENDIENTE")
+    foto_url         = Column(String, nullable=True)
     # DISPONIBLE | OCUPADO | INACTIVO
 
     sindicato = relationship("Sindicato", back_populates="conductores")
