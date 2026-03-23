@@ -727,7 +727,9 @@ function mostrarPantallaMain() {
 
 // ── WEBSOCKET ─────────────────────────────────────
 function conectarWS() {
-  const url = `ws://${location.hostname}:8000/ws/driver/${driverData.driver_id}`;
+  const url = location.hostname.includes('ngrok')
+    ? `wss://${location.hostname}/ws/driver/${driverData.driver_id}`
+    : `ws://${location.hostname}:8000/ws/driver/${driverData.driver_id}`;
   ws = new WebSocket(url);
 
   ws.onopen = () => {
