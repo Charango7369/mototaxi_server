@@ -526,11 +526,12 @@ select.field-input option { background: #121620; }
       <label class="field-label">Sindicato al que perteneces</label>
       <select id="f-sindicato" class="field-input">
         <option value="">— Selecciona tu sindicato —</option>
-        <option value="1">Sindicato 1 — Zona norte</option>
-        <option value="2">Sindicato 2 — Zona centro</option>
-        <option value="3">Sindicato 3 — Zona sur</option>
-        <option value="4">Sindicato 4 — Zona mercado</option>
-        <option value="5">Sindicato 5 — Zona periférica</option>
+        <option value="1">Sindicato TUICHI</option>
+        <option value="2">Sindicato AMAZONAS</option>
+        <option value="3">Sindicato MADIDI</option>
+        <option value="4">Sindicato 15 DE AGOSTO</option>
+        <option value="5">Sindicato NORTENO</option>
+        <option value="6">Sindicato INMACULADA CONCEPCION</option>
       </select>
     </div>
 
@@ -640,19 +641,18 @@ select.field-input option { background: #121620; }
 </div>
 
 <script>
-const API = location.hostname.includes('ngrok')
-  ? `${location.protocol}//${location.hostname}`
-  : `http://${location.hostname}:8000`;
+const API = `http://${location.hostname}:8000`;
 
 let fotoFile = null;
 let pasoActual = 1;
 
 const sindicatoNombres = {
-  "1": "Sindicato 1 — Zona norte",
-  "2": "Sindicato 2 — Zona centro",
-  "3": "Sindicato 3 — Zona sur",
-  "4": "Sindicato 4 — Zona mercado",
-  "5": "Sindicato 5 — Zona periférica"
+  "1": "Sindicato TUICHI",
+  "2": "Sindicato AMAZONAS",
+  "3": "Sindicato MADIDI",
+  "4": "Sindicato 15 DE AGOSTO",
+  "5": "Sindicato NORTENO",
+  "6": "Sindicato INMACULADA CONCEPCION"
 };
 
 function irPaso(n) {

@@ -701,6 +701,15 @@ async function doLogin() {
 }
 
 // ── MOSTRAR PANTALLA PRINCIPAL ────────────────────
+const SINDICATOS = {
+  1: "TUICHI",
+  2: "AMAZONAS",
+  3: "MADIDI",
+  4: "15 DE AGOSTO",
+  5: "NORTENO",
+  6: "INMACULADA CONCEPCION"
+};
+
 function mostrarPantallaMain() {
   document.getElementById('screen-login').style.display = 'none';
   const main = document.getElementById('screen-main');
@@ -708,7 +717,8 @@ function mostrarPantallaMain() {
 
   const nombre = driverData.nombre || 'Conductor';
   document.getElementById('header-nombre').textContent = nombre;
-  document.getElementById('header-placa').textContent = `Token: driver-${driverData.driver_id}`;
+  document.getElementById('header-placa').textContent =
+    'Sindicato ' + (SINDICATOS[driverData.sindicato_id] || ('S' + driverData.sindicato_id));
   document.getElementById('avatar-inicial').textContent = nombre.charAt(0).toUpperCase();
 }
 
