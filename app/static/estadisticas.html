@@ -558,7 +558,9 @@ tbody td {
 </main>
 
 <script>
-const API = `http://${location.hostname}:8000`;
+const API = location.hostname.includes('ngrok')
+  ? `${location.protocol}//${location.hostname}`
+  : `http://${location.hostname}:8000`;
 let chartHoras = null;
 let chartDestinos = null;
 

@@ -602,8 +602,9 @@ select.field-input option { background: #161b26; }
 <div class="toast" id="toast"></div>
 
 <script>
-const isNgrok = location.hostname.includes('ngrok');
-const API = isNgrok
+const API = location.hostname.includes('ngrok')
+  ? `${location.protocol}//${location.hostname}`
+  : `http://${location.hostname}:8000`;
   ? `${location.protocol}//${location.hostname}`
   : `http://${location.hostname}:8000`;
 

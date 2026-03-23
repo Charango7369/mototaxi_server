@@ -651,7 +651,9 @@ input::placeholder { color: var(--muted); }
 <div class="toast" id="toast"></div>
 
 <script>
-const API = `http://${location.hostname}:8000`;
+const API = location.hostname.includes('ngrok')
+  ? `${location.protocol}//${location.hostname}`
+  : `http://${location.hostname}:8000`;
 let driverData = null;
 let ws = null;
 let rideActual = null;

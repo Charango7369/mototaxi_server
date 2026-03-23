@@ -641,7 +641,9 @@ select.field-input option { background: #121620; }
 </div>
 
 <script>
-const API = `http://${location.hostname}:8000`;
+const API = location.hostname.includes('ngrok')
+  ? `${location.protocol}//${location.hostname}`
+  : `http://${location.hostname}:8000`;
 
 let fotoFile = null;
 let pasoActual = 1;
