@@ -694,6 +694,7 @@ async function doLogin() {
     localStorage.setItem('jwt_token', data.token);
     mostrarPantallaMain();
     conectarWS();
+    iniciarGeolocalizacion();
 
   } catch(e) {
     err.textContent = 'Error de conexión con el servidor';
@@ -752,7 +753,51 @@ function conectarWS() {
     document.getElementById('ws-text').textContent = 'Error de conexión';
   };
 
-  // Ping cada 25s para mantener conexión viva
+  // ── GEOLOCALIZACIÓN AUTOMÁTICA ──────────────────
+let geoWatchId = null;
+
+function iniciarGeolocalizacion() {
+  if (!navigator.geolocation) {
+    console.log('Geolocalización no disponible');
+    return;
+  }
+
+  // Enviar ubicación inmediatamente
+  navigator.geolocation.getCurrentPosition(enviarUbicacion, errorGeo, {
+    enableHighAccuracy: true,
+    timeout: 10000
+  });
+
+  // Luego actualizar cada vez que el conductor se mueve
+  geoWatchId = navigator.geolocation.watchPosition(enviarUbicacion, errorGeo, {
+    enableHighAccuracy: true,
+    timeout: 10000,
+    maximumAge: 5000
+  });
+}
+
+async function enviarUbicacion(position) {
+  if (!driverData) return;
+  const lat = position.coords.latitude;
+  const lon = position.coords.longitude;
+
+  try {
+    await fetch(`${API}/driver/location?driver_id=${driverData.driver_id}&lat=${lat}&lon=${lon}`, {
+      method: 'POST'
+    });
+    document.getElementById('ws-text').textContent =
+      'Conectado — GPS activo (' + lat.toFixed(5) + ', ' + lon.toFixed(5) + ')';
+  } catch(e) {
+    console.log('Error enviando ubicacion:', e);
+  }
+}
+
+function errorGeo(error) {
+  console.log('Error GPS:', error.message);
+  document.getElementById('ws-text').textContent = 'Conectado — GPS no disponible';
+}
+
+// Ping cada 25s para mantener conexión viva
   setInterval(() => {
     if (ws && ws.readyState === WebSocket.OPEN) ws.send('ping');
   }, 25000);
