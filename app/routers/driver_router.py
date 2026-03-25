@@ -87,7 +87,15 @@ def update_location(
     if not driver:
         raise HTTPException(status_code=404, detail="Conductor no encontrado")
     driver.lat = lat; driver.lon = lon; db.commit()
-    background_tasks.add_task(manager.broadcast, {"driver_id": driver_id, "lat": lat, "lon": lon})
+    background_tasks.add_task(manager.broadcast, {
+        "driver_id":    driver_id,
+        "nombre":       driver.nombre,
+        "placa":        driver.placa,
+        "sindicato_id": driver.sindicato_id,
+        "estado":       driver.estado,
+        "lat":          lat,
+        "lon":          lon
+    })
     return {"status": "updated", "driver_id": driver_id}
 
 

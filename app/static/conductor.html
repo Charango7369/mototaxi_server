@@ -760,20 +760,21 @@ let geoWatchId = null;
 
 function iniciarGeolocalizacion() {
   if (!navigator.geolocation) {
-    console.log('Geolocalización no disponible');
+    document.getElementById('ws-text').textContent = 'GPS no disponible en este dispositivo';
     return;
   }
 
-  // Enviar ubicación inmediatamente
+  document.getElementById('ws-text').textContent = 'Obteniendo ubicacion GPS...';
+
   navigator.geolocation.getCurrentPosition(enviarUbicacion, errorGeo, {
     enableHighAccuracy: true,
-    timeout: 10000
+    timeout: 15000,
+    maximumAge: 0
   });
 
-  // Luego actualizar cada vez que el conductor se mueve
   geoWatchId = navigator.geolocation.watchPosition(enviarUbicacion, errorGeo, {
     enableHighAccuracy: true,
-    timeout: 10000,
+    timeout: 15000,
     maximumAge: 5000
   });
 }
@@ -784,25 +785,35 @@ async function enviarUbicacion(position) {
   const lon = position.coords.longitude;
 
   try {
-    await fetch(`${API}/driver/location?driver_id=${driverData.driver_id}&lat=${lat}&lon=${lon}`, {
+    const res = await fetch(`${API}/driver/location?driver_id=${driverData.driver_id}&lat=${lat}&lon=${lon}`, {
       method: 'POST'
     });
-    document.getElementById('ws-text').textContent =
-      'Conectado — GPS activo (' + lat.toFixed(5) + ', ' + lon.toFixed(5) + ')';
+    if (res.ok) {
+      document.getElementById('ws-text').textContent =
+        'GPS activo — ' + lat.toFixed(4) + ', ' + lon.toFixed(4);
+      document.getElementById('ws-indicator').classList.add('on');
+    }
   } catch(e) {
     console.log('Error enviando ubicacion:', e);
   }
 }
 
 function errorGeo(error) {
-  console.log('Error GPS:', error.message);
-  document.getElementById('ws-text').textContent = 'Conectado — GPS no disponible';
+  let msg = 'GPS: ';
+  switch(error.code) {
+    case 1: msg += 'Permiso denegado — activa ubicacion en el navegador'; break;
+    case 2: msg += 'Posicion no disponible'; break;
+    case 3: msg += 'Tiempo agotado — reintentando...';
+      setTimeout(iniciarGeolocalizacion, 5000);
+      break;
+  }
+  document.getElementById('ws-text').textContent = msg;
 }
 
 // Ping cada 25s para mantener conexión viva
   setInterval(() => {
     if (ws && ws.readyState === WebSocket.OPEN) ws.send('ping');
-  }, 25000);
+  }, 10000);
 }
 
 // ── RECIBIR VIAJE ─────────────────────────────────
