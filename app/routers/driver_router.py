@@ -87,7 +87,7 @@ def update_location(
     if not driver:
         raise HTTPException(status_code=404, detail="Conductor no encontrado")
     driver.lat = lat; driver.lon = lon; db.commit()
-    background_tasks.add_task(manager.broadcast, {
+    background_tasks.add_task(manager.broadcast_to_operators, {
         "driver_id":    driver_id,
         "nombre":       driver.nombre,
         "placa":        driver.placa,
@@ -118,7 +118,7 @@ def todos_conductores(sindicato_id: int = None, db: Session = Depends(get_db)):
     return [{"driver_id": d.id, "nombre": d.nombre, "telefono": d.telefono,
              "placa": d.placa, "sindicato_id": d.sindicato_id,
              "estado": d.estado, "estado_registro": d.estado_registro,
-             "foto_url": d.foto_url}
+             "foto_url": d.foto_url, "lat": d.lat, "lon": d.lon}
             for d in q.all()]
 
 

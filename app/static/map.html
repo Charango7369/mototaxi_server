@@ -358,6 +358,33 @@ function logEvento(msg){
   if(log.children.length>50)log.removeChild(log.lastChild);
 }
 
+// ── CARGA INICIAL DE CONDUCTORES ────────────────────
+async function cargarConductoresEnMapa(){
+  try {
+    const res = await fetch(`${API}/driver/lista/todos`);
+    const data = await res.json();
+    let cargados = 0;
+    data.forEach(d => {
+      if (d.lat && d.lon && d.lat !== 0 && d.lon !== 0) {
+        actualizarConductor({
+          driver_id:    d.driver_id,
+          nombre:       d.nombre,
+          placa:        d.placa,
+          sindicato_id: d.sindicato_id,
+          estado:       d.estado,
+          lat:          d.lat,
+          lon:          d.lon
+        });
+        cargados++;
+      }
+    });
+    logEvento(cargados + ' conductores cargados en mapa');
+    actualizarContadores();
+  } catch(e) {
+    logEvento('Error cargando conductores');
+  }
+}
+
 // ── VIAJES ACTIVOS ───────────────────────────────────
 async function cargarVialesActivos(){
   try{
@@ -516,6 +543,7 @@ function toast(msg, tipo=''){
 
 // ── INIT ─────────────────────────────────────────────
 conectarWS();
+cargarConductoresEnMapa();
 cargarTodo();
 setInterval(cargarTodo, 30000);
 </script>
