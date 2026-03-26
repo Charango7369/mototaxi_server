@@ -1,20 +1,9 @@
-# Archivos de entorno virtual
-venv/
-env/
+.env
 __pycache__/
 *.pyc
 *.pyo
-
-# Bases de datos locales
+venv/
+data/
 *.db
-*.sqlite3
-
-# Archivos temporales / logs
-*.log
-*.tmp
-
-# Configs de IDEs
-.vscode/
-.idea/
+app/static/fotos/
 .DS_Store
-.env
