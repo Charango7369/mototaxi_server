@@ -12,4 +12,4 @@ RUN mkdir -p /app/data /app/app/static/fotos
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-ENTRYPOINT ["/start.sh"]
+ENTRYPOINT ["sh", "-c", "/start.sh"]
