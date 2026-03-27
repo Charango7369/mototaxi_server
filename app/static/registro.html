@@ -641,7 +641,7 @@ select.field-input option { background: #121620; }
 </div>
 
 <script>
-const API = location.hostname.includes('ngrok')
+const API = (location.hostname.includes('ngrok') || location.hostname.includes('railway.app'))
   ? `${location.protocol}//${location.hostname}`
   : `http://${location.hostname}:8000`;
 

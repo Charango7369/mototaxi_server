@@ -79,7 +79,7 @@
     <script>
         // --- CONFIGURACIÓN ---
         // Cambia esto por la IP de tu Raspberry Pi si accedes desde el móvil
-        const API_URL = location.hostname.includes('ngrok')
+        const API_URL = (location.hostname.includes('ngrok') || location.hostname.includes('railway.app'))
   ? `${location.protocol}//${location.hostname}/monitor/status`
   : `http://${location.hostname}:8000/monitor/status`; 
         const UPDATE_INTERVAL_MS = 15000; // Actualizar cada 15 segundos

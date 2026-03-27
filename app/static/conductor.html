@@ -651,7 +651,7 @@ input::placeholder { color: var(--muted); }
 <div class="toast" id="toast"></div>
 
 <script>
-const API = location.hostname.includes('ngrok')
+const API = (location.hostname.includes('ngrok') || location.hostname.includes('railway.app'))
   ? `${location.protocol}//${location.hostname}`
   : `http://${location.hostname}:8000`;
 let driverData = null;
@@ -727,7 +727,7 @@ function mostrarPantallaMain() {
 
 // ── WEBSOCKET ─────────────────────────────────────
 function conectarWS() {
-  const url = location.hostname.includes('ngrok')
+  const url = (location.hostname.includes('ngrok') || location.hostname.includes('railway.app'))
     ? `wss://${location.hostname}/ws/driver/${driverData.driver_id}`
     : `ws://${location.hostname}:8000/ws/driver/${driverData.driver_id}`;
   ws = new WebSocket(url);

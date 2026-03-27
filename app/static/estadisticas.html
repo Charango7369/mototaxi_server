@@ -558,7 +558,7 @@ tbody td {
 </main>
 
 <script>
-const API = location.hostname.includes('ngrok')
+const API = (location.hostname.includes('ngrok') || location.hostname.includes('railway.app'))
   ? `${location.protocol}//${location.hostname}`
   : `http://${location.hostname}:8000`;
 let chartHoras = null;

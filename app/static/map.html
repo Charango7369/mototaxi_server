@@ -250,10 +250,10 @@ aside{background:var(--surface);border-left:1px solid var(--border);
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const API = location.hostname.includes('ngrok')
+const API = (location.hostname.includes('ngrok') || location.hostname.includes('railway.app'))
   ? `${location.protocol}//${location.hostname}`
   : `http://${location.hostname}:8000`;
-const WS  = location.hostname.includes('ngrok')
+const WS  = (location.hostname.includes('ngrok') || location.hostname.includes('railway.app'))
   ? `wss://${location.hostname}/ws/operators`
   : `ws://${location.hostname}:8000/ws/operators`;
 
