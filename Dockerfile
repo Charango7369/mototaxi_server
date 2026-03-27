@@ -9,6 +9,7 @@ COPY . .
 
 RUN mkdir -p /app/data /app/app/static/fotos
 
-EXPOSE 8000
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+ENTRYPOINT ["/start.sh"]
