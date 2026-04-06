@@ -6,11 +6,7 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base, get_db
 from app.main import app
 
-engine_test = create_engine(
-    "sqlite:///:memory:",
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
+engine_test = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine_test)
 
 @pytest.fixture(scope="function")
@@ -46,11 +42,9 @@ def sindicato(db):
 @pytest.fixture
 def driver_aprobado(db, sindicato):
     from app.models import Driver
-    d = Driver(
-        nombre="Juan Pérez", telefono="70000001", placa="ABC-123",
+    d = Driver(nombre="Juan Perez", telefono="70000001", placa="ABC-123",
         sindicato_id=sindicato.id, lat=-14.5, lon=-67.5,
-        estado="DISPONIBLE", estado_registro="APROBADO",
-    )
+        estado="DISPONIBLE", estado_registro="APROBADO")
     db.add(d); db.commit(); db.refresh(d)
     return d
 
