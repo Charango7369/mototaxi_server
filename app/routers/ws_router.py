@@ -16,9 +16,9 @@ async def driver_channel(websocket: WebSocket, driver_id: int):
                 # Ping cada 20s para mantener viva la conexion en Railway
                 await websocket.send_json({"event": "ping"})
     except WebSocketDisconnect:
-        manager.disconnect_driver(driver_id)
+        manager.disconnect_driver(driver_id, websocket)
     except Exception:
-        manager.disconnect_driver(driver_id)
+        manager.disconnect_driver(driver_id, websocket)
 
 
 @router.websocket("/ws/operators")

@@ -78,10 +78,11 @@
     
     <script>
         // --- CONFIGURACIÓN ---
-        // Cambia esto por la IP de tu Raspberry Pi si accedes desde el móvil
-        const API_URL = (location.hostname.includes('ngrok') || location.hostname.includes('railway.app'))
-  ? `${location.protocol}//${location.hostname}/monitor/status`
-  : `http://${location.hostname}:8000/monitor/status`; 
+        const _host  = location.hostname;
+        const _port  = (_host === 'localhost' || _host === '127.0.0.1') ? ':8000' : '';
+        const _proto = location.protocol;
+        const BASE_API = `${_proto}//${_host}${_port}`;
+        const API_URL  = `${BASE_API}/monitor/status`;
         const UPDATE_INTERVAL_MS = 15000; // Actualizar cada 15 segundos
 
         // --- INICIALIZACIÓN DEL MAPA ---
@@ -166,7 +167,7 @@
                 lastUpdateSpan.innerText = now.toLocaleTimeString();
 
                 // Cargar sindicatos desde API real
-                const resSind = await fetch(`http://${location.hostname}:8000/stats/sindicatos?periodo=dia`);
+                const resSind = await fetch(`${BASE_API}/stats/sindicatos?periodo=dia`);
                 const sindicatos = await resSind.json();
                 const colors = ['yellow','blue','green','purple','red'];
                 const list = document.getElementById('sindicatos-list');

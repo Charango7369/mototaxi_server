@@ -5,7 +5,7 @@
 # Uso:
 #   docker-compose up -d --build    ← primera vez
 #   docker-compose up -d            ← siguientes veces
-#   docker-compose logs -f api      ← ver logs
+#   docker-compose logs -f backend  ← ver logs
 #   docker-compose down             ← detener
 # ─────────────────────────────────────────────────────────────────────────────
 services:
@@ -16,5 +16,10 @@ services:
       - "8001:8000"
     volumes:
       - .:/app
-      - .:/data:/app/data
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      - mototaxi_data:/app/data
+    environment:
+      - PORT=8000
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  mototaxi_data:

@@ -116,6 +116,7 @@ def rides_activos(
 @router.post("/{ride_id}/cancel")
 def cancel_ride(
     ride_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
     ride = db.query(Ride).filter(Ride.id == ride_id).first()
@@ -135,11 +136,11 @@ def cancel_ride(
     ride.status = "CANCELADO"
     db.commit()
 
-    # 🔥 NUEVO: notificar operadores
-    manager.broadcast_to_operators({
-        "event": "ride_cancelled",
-        "ride_id": ride_id
-    })
+    # 🔥 notificar operadores
+    background_tasks.add_task(
+        manager.broadcast_to_operators,
+        {"event": "ride_cancelled", "ride_id": ride_id}
+    )
 
     return {"status": "CANCELADO", "ride_id": ride_id}
 
@@ -150,6 +151,7 @@ def cancel_ride(
 @router.post("/{ride_id}/accept")
 def accept_ride(
     ride_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     conductor: Driver = Depends(get_current_driver)
 ):
@@ -163,12 +165,11 @@ def accept_ride(
 
     result = update_ride_status(db, ride_id, "ACEPTADO")
 
-    # 🔥 NUEVO
-    manager.broadcast_to_operators({
-        "event": "ride_accepted",
-        "ride_id": ride_id,
-        "driver_id": conductor.id
-    })
+    # 🔥 Notificar operadores
+    background_tasks.add_task(
+        manager.broadcast_to_operators,
+        {"event": "ride_accepted", "ride_id": ride_id, "driver_id": conductor.id}
+    )
 
     return result
 
@@ -179,6 +180,7 @@ def accept_ride(
 @router.post("/{ride_id}/start")
 def start_ride(
     ride_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     conductor: Driver = Depends(get_current_driver)
 ):
@@ -192,11 +194,11 @@ def start_ride(
 
     result = update_ride_status(db, ride_id, "EN_VIAJE")
 
-    # 🔥 NUEVO
-    manager.broadcast_to_operators({
-        "event": "ride_started",
-        "ride_id": ride_id
-    })
+    # 🔥 Notificar operadores
+    background_tasks.add_task(
+        manager.broadcast_to_operators,
+        {"event": "ride_started", "ride_id": ride_id}
+    )
 
     return result
 
@@ -207,6 +209,7 @@ def start_ride(
 @router.post("/{ride_id}/finish")
 def finish_ride(
     ride_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     conductor: Driver = Depends(get_current_driver)
 ):
@@ -225,10 +228,10 @@ def finish_ride(
 
     result = update_ride_status(db, ride_id, "FINALIZADO")
 
-    # 🔥 NUEVO
-    manager.broadcast_to_operators({
-        "event": "ride_finished",
-        "ride_id": ride_id
-    })
+    # 🔥 Notificar operadores
+    background_tasks.add_task(
+        manager.broadcast_to_operators,
+        {"event": "ride_finished", "ride_id": ride_id}
+    )
 
     return result

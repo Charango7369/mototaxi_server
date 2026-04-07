@@ -725,11 +725,70 @@ function mostrarPantallaMain() {
   document.getElementById('avatar-inicial').textContent = nombre.charAt(0).toUpperCase();
 }
 
+// ── AUTH FETCH (JWT) ──────────────────────────────
+async function authFetch(url, opts = {}) {
+  const token = localStorage.getItem('jwt_token');
+  return fetch(url, {
+    ...opts,
+    headers: {
+      ...(opts.headers || {}),
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+}
+
+// ── GEOLOCALIZACIÓN ───────────────────────────────
+let geoWatchId = null;
+
+function iniciarGeolocalizacion() {
+  if (!navigator.geolocation) {
+    document.getElementById('ws-text').textContent = 'GPS no disponible en este dispositivo';
+    return;
+  }
+  document.getElementById('ws-text').textContent = 'Obteniendo ubicacion GPS...';
+  navigator.geolocation.getCurrentPosition(enviarUbicacion, errorGeo, {
+    enableHighAccuracy: true, timeout: 15000, maximumAge: 0
+  });
+  geoWatchId = navigator.geolocation.watchPosition(enviarUbicacion, errorGeo, {
+    enableHighAccuracy: true, timeout: 15000, maximumAge: 5000
+  });
+}
+
+async function enviarUbicacion(position) {
+  if (!driverData) return;
+  const lat = position.coords.latitude;
+  const lon = position.coords.longitude;
+  try {
+    const res = await fetch(
+      `${API}/driver/location?driver_id=${driverData.driver_id}&lat=${lat}&lon=${lon}`,
+      { method: 'POST' }
+    );
+    if (res.ok) {
+      document.getElementById('ws-text').textContent =
+        'GPS activo — ' + lat.toFixed(4) + ', ' + lon.toFixed(4);
+      document.getElementById('ws-indicator').classList.add('on');
+    }
+  } catch(e) { console.log('Error enviando ubicacion:', e); }
+}
+
+function errorGeo(error) {
+  let msg = 'GPS: ';
+  switch(error.code) {
+    case 1: msg += 'Permiso denegado — activa ubicacion en el navegador'; break;
+    case 2: msg += 'Posicion no disponible'; break;
+    case 3: msg += 'Tiempo agotado — reintentando...';
+      setTimeout(iniciarGeolocalizacion, 5000); break;
+  }
+  document.getElementById('ws-text').textContent = msg;
+}
+
 // ── WEBSOCKET ─────────────────────────────────────
 function conectarWS() {
-  const url = (location.hostname.includes('ngrok') || location.hostname.includes('railway.app'))
-    ? `wss://${location.hostname}/ws/driver/${driverData.driver_id}`
-    : `ws://${location.hostname}:8000/ws/driver/${driverData.driver_id}`;
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const host  = location.hostname;
+  const port  = (host === 'localhost' || host === '127.0.0.1') ? ':8000' : '';
+  const url   = `${proto}://${host}${port}/ws/driver/${driverData.driver_id}`;
   ws = new WebSocket(url);
 
   ws.onopen = () => {
@@ -740,9 +799,7 @@ function conectarWS() {
 
   ws.onmessage = (e) => {
     const data = JSON.parse(e.data);
-    if (data.event === 'ride_assigned') {
-      recibirViaje(data);
-    }
+    if (data.event === 'ride_assigned') recibirViaje(data);
   };
 
   ws.onclose = () => {
@@ -755,62 +812,7 @@ function conectarWS() {
     document.getElementById('ws-text').textContent = 'Error de conexión';
   };
 
-  // ── GEOLOCALIZACIÓN AUTOMÁTICA ──────────────────
-let geoWatchId = null;
-
-function iniciarGeolocalizacion() {
-  if (!navigator.geolocation) {
-    document.getElementById('ws-text').textContent = 'GPS no disponible en este dispositivo';
-    return;
-  }
-
-  document.getElementById('ws-text').textContent = 'Obteniendo ubicacion GPS...';
-
-  navigator.geolocation.getCurrentPosition(enviarUbicacion, errorGeo, {
-    enableHighAccuracy: true,
-    timeout: 15000,
-    maximumAge: 0
-  });
-
-  geoWatchId = navigator.geolocation.watchPosition(enviarUbicacion, errorGeo, {
-    enableHighAccuracy: true,
-    timeout: 15000,
-    maximumAge: 5000
-  });
-}
-
-async function enviarUbicacion(position) {
-  if (!driverData) return;
-  const lat = position.coords.latitude;
-  const lon = position.coords.longitude;
-
-  try {
-    const res = await fetch(`${API}/driver/location?driver_id=${driverData.driver_id}&lat=${lat}&lon=${lon}`, {
-      method: 'POST'
-    });
-    if (res.ok) {
-      document.getElementById('ws-text').textContent =
-        'GPS activo — ' + lat.toFixed(4) + ', ' + lon.toFixed(4);
-      document.getElementById('ws-indicator').classList.add('on');
-    }
-  } catch(e) {
-    console.log('Error enviando ubicacion:', e);
-  }
-}
-
-function errorGeo(error) {
-  let msg = 'GPS: ';
-  switch(error.code) {
-    case 1: msg += 'Permiso denegado — activa ubicacion en el navegador'; break;
-    case 2: msg += 'Posicion no disponible'; break;
-    case 3: msg += 'Tiempo agotado — reintentando...';
-      setTimeout(iniciarGeolocalizacion, 5000);
-      break;
-  }
-  document.getElementById('ws-text').textContent = msg;
-}
-
-// Ping cada 25s para mantener conexión viva
+  // Ping cada 10s para mantener conexión viva
   setInterval(() => {
     if (ws && ws.readyState === WebSocket.OPEN) ws.send('ping');
   }, 10000);

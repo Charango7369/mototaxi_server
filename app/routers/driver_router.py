@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, UploadFi
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
-import shutil, uuid
+import shutil, uuid, os
 
 from app.database import get_db
 from app.models import Driver, Ride
@@ -10,6 +10,10 @@ from app.websocket_manager import manager
 from app.auth import crear_token
 
 router = APIRouter(prefix="/driver", tags=["Drivers"])
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FOTOS_DIR = os.path.normpath(os.path.join(BASE_DIR, "..", "static", "fotos"))
+os.makedirs(FOTOS_DIR, exist_ok=True)
 
 
 class DriverRegister(BaseModel):
@@ -50,7 +54,7 @@ async def registro_conductor(
     if foto and foto.filename:
         ext = foto.filename.split(".")[-1].lower()
         nombre_archivo = f"{uuid.uuid4().hex}.{ext}"
-        ruta = f"/home/raspberrypi3/mototaxi_server/app/static/fotos/{nombre_archivo}"
+        ruta = os.path.join(FOTOS_DIR, nombre_archivo)
         with open(ruta, "wb") as f:
             shutil.copyfileobj(foto.file, f)
         foto_url = f"/static/fotos/{nombre_archivo}"

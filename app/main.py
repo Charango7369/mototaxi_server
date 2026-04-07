@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 import os
 
@@ -18,7 +19,8 @@ app.add_middleware(
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 app.include_router(driver_router.router)
 app.include_router(ride_router.router)
@@ -27,6 +29,36 @@ app.include_router(stats_router.router)
 app.include_router(monitor_router.router)
 
 Base.metadata.create_all(bind=engine)
+
+
+# ── RUTAS DIRECTAS A HTMLS ────────────────────────────────────────
+@app.get("/", response_class=FileResponse)
+def root():
+    return FileResponse(os.path.join(STATIC_DIR, "pasajero.html"))
+
+@app.get("/pasajero", response_class=FileResponse)
+def pasajero():
+    return FileResponse(os.path.join(STATIC_DIR, "pasajero.html"))
+
+@app.get("/conductor", response_class=FileResponse)
+def conductor():
+    return FileResponse(os.path.join(STATIC_DIR, "conductor.html"))
+
+@app.get("/operador", response_class=FileResponse)
+def operador():
+    return FileResponse(os.path.join(STATIC_DIR, "map.html"))
+
+@app.get("/registro", response_class=FileResponse)
+def registro():
+    return FileResponse(os.path.join(STATIC_DIR, "registro.html"))
+
+@app.get("/estadisticas", response_class=FileResponse)
+def estadisticas():
+    return FileResponse(os.path.join(STATIC_DIR, "estadisticas.html"))
+
+@app.get("/monitor", response_class=FileResponse)
+def monitor():
+    return FileResponse(os.path.join(STATIC_DIR, "monitor_dashboard.html"))
 
 
 @app.post("/admin/init-db")
