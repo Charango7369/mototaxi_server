@@ -1,4 +1,4 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from app.websocket_manager import manager
 import asyncio
 import json
@@ -6,8 +6,8 @@ import json
 router = APIRouter(tags=["WebSocket"])
 
 
-@router.websocket("/ws/driver/{driver_id}")
-async def driver_channel(websocket: WebSocket, driver_id: int):
+@router.websocket("/ws/driver")
+async def driver_channel(websocket: WebSocket, driver_id: int = Query(...)):
     await manager.connect_driver(driver_id, websocket)
     try:
         while True:
