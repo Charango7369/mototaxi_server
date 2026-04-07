@@ -6,7 +6,7 @@ import json
 router = APIRouter(tags=["WebSocket"])
 
 
-@router.websocket("/ws/driver")
+@router.websocket("/api/ws/driver")
 async def driver_channel(websocket: WebSocket, driver_id: int = Query(...)):
     await manager.connect_driver(driver_id, websocket)
     try:
@@ -27,7 +27,7 @@ async def driver_channel(websocket: WebSocket, driver_id: int = Query(...)):
         manager.disconnect_driver(driver_id, websocket)
 
 
-@router.websocket("/ws/operators")
+@router.websocket("/api/ws/operators")
 async def operator_channel(websocket: WebSocket):
     await manager.connect_operator(websocket)
     try:
