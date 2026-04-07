@@ -1,4 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+from starlette.websockets import WebSocketState
 from app.websocket_manager import manager
 import asyncio
 import json
@@ -8,7 +9,9 @@ router = APIRouter(tags=["WebSocket"])
 
 @router.websocket("/ws/driver")
 async def driver_channel(websocket: WebSocket, driver_id: int = Query(...)):
-    await manager.connect_driver(driver_id, websocket)
+    # Aceptar sin validar Origin (necesario en Railway)
+    await websocket.accept()
+    manager.rooms.setdefault(driver_id, []).append(websocket)
     try:
         while True:
             try:
@@ -29,7 +32,9 @@ async def driver_channel(websocket: WebSocket, driver_id: int = Query(...)):
 
 @router.websocket("/ws/operators")
 async def operator_channel(websocket: WebSocket):
-    await manager.connect_operator(websocket)
+    # Aceptar sin validar Origin (necesario en Railway)
+    await websocket.accept()
+    manager.operators.append(websocket)
     try:
         while True:
             try:
