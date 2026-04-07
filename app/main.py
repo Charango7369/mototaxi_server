@@ -18,20 +18,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Middleware para forzar upgrade WebSocket en Railway
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-
-class WSUpgradeMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        if request.url.path.startswith("/ws"):
-            # Asegurar headers correctos para WebSocket
-            headers = dict(request.headers)
-            headers["upgrade"] = "websocket"
-        return await call_next(request)
-
-app.add_middleware(WSUpgradeMiddleware)
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -43,6 +29,7 @@ app.include_router(stats_router.router)
 app.include_router(monitor_router.router)
 
 Base.metadata.create_all(bind=engine)
+
 
 @app.get("/", response_class=FileResponse)
 def root():
