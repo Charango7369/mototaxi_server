@@ -256,7 +256,7 @@ const API = (location.hostname.includes('ngrok') || location.hostname.includes('
 const _wsHost = location.hostname;
 const _wsPort = (_wsHost === 'localhost' || _wsHost === '127.0.0.1') ? ':8000' : '';
 const _wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
-const WS = `${_wsProto}://${_wsHost}${_wsPort}/api/ws/operators`;
+const WS = `${_wsProto}://${_wsHost}${_wsPort}/ws/operators`;
 
 const drivers = {};
 let sindicatoFilter = 0;
