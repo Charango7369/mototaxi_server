@@ -1,6 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.websocket_manager import manager
 import asyncio
+import json
 
 router = APIRouter(tags=["WebSocket"])
 
@@ -11,9 +12,14 @@ async def driver_channel(websocket: WebSocket, driver_id: int):
     try:
         while True:
             try:
-                data = await asyncio.wait_for(websocket.receive_text(), timeout=20.0)
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=15.0)
+                try:
+                    msg = json.loads(data)
+                    if msg.get("event") == "ping":
+                        await websocket.send_json({"event": "pong"})
+                except Exception:
+                    pass
             except asyncio.TimeoutError:
-                # Ping cada 20s para mantener viva la conexion en Railway
                 await websocket.send_json({"event": "ping"})
     except WebSocketDisconnect:
         manager.disconnect_driver(driver_id, websocket)
@@ -27,9 +33,14 @@ async def operator_channel(websocket: WebSocket):
     try:
         while True:
             try:
-                data = await asyncio.wait_for(websocket.receive_text(), timeout=20.0)
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=15.0)
+                try:
+                    msg = json.loads(data)
+                    if msg.get("event") == "ping":
+                        await websocket.send_json({"event": "pong"})
+                except Exception:
+                    pass
             except asyncio.TimeoutError:
-                # Ping cada 20s para mantener viva la conexion en Railway
                 await websocket.send_json({"event": "ping"})
     except WebSocketDisconnect:
         manager.disconnect_operator(websocket)
