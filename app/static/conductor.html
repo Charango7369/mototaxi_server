@@ -788,7 +788,7 @@ function conectarWS() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   const host  = location.hostname;
   const port  = (host === 'localhost' || host === '127.0.0.1') ? ':8000' : '';
-  const url   = `${proto}://${host}${port}/ws/driver/${driverData.driver_id}`;
+  const url   = `${proto}://${host}${port}/ws/driver?driver_id=${driverData.driver_id}`;
   ws = new WebSocket(url);
 
   ws.onopen = () => {
