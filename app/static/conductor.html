@@ -4,7 +4,9 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <meta name="theme-color" content="#0a0b0f"/>
+<link rel="manifest" href="/static/manifest.json"/>
 <title>MotoApolo — Conductor</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -541,9 +543,108 @@ input::placeholder { color: var(--muted); }
 }
 
 .shake { animation: shake 0.5s ease-in-out; }
+
+/* ── PANTALLA GPS BLOQUEADO ── */
+#screen-gps {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  gap: 20px;
+  text-align: center;
+}
+
+.gps-icon { font-size: 64px; }
+
+.gps-title {
+  font-family: var(--syne);
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--accent);
+}
+
+.gps-sub {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 300px;
+}
+
+.gps-steps {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  width: 100%;
+  max-width: 340px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gps-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.gps-step-num {
+  background: var(--accent);
+  color: #0a0b0f;
+  font-family: var(--syne);
+  font-weight: 800;
+  font-size: 12px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-reintentar-gps {
+  width: 100%;
+  max-width: 340px;
+  background: var(--accent);
+  color: #0a0b0f;
+  font-family: var(--syne);
+  font-weight: 700;
+  font-size: 15px;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+/* ── BADGE OFFLINE ── */
+.offline-badge {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  background: rgba(231,76,60,0.95);
+  color: #fff;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px;
+  z-index: 999;
+  letter-spacing: 0.05em;
+}
+
+.offline-badge.show { display: block; }
 </style>
 </head>
 <body>
+
+<!-- ══ BADGE OFFLINE ══════════════════════════════ -->
+<div class="offline-badge" id="offline-badge">
+  📡 Sin conexión — reconectando...
+</div>
 
 <!-- ══ PANTALLA LOGIN ══════════════════════════════ -->
 <div id="screen-login">
@@ -558,6 +659,34 @@ input::placeholder { color: var(--muted); }
   </div>
   <button class="btn-login" onclick="doLogin()">Entrar</button>
   <div class="login-error" id="login-error"></div>
+</div>
+
+<!-- ══ PANTALLA GPS BLOQUEADO ══════════════════════ -->
+<div id="screen-gps">
+  <div class="gps-icon">📍</div>
+  <div class="gps-title">Activa tu ubicación</div>
+  <div class="gps-sub">Para recibir viajes necesitas permitir el acceso a tu ubicación.</div>
+  <div class="gps-steps">
+    <div class="gps-step">
+      <div class="gps-step-num">1</div>
+      <div>Toca el ícono de candado 🔒 en la barra del navegador</div>
+    </div>
+    <div class="gps-step">
+      <div class="gps-step-num">2</div>
+      <div>Selecciona <strong>"Permisos"</strong> → <strong>"Ubicación"</strong></div>
+    </div>
+    <div class="gps-step">
+      <div class="gps-step-num">3</div>
+      <div>Elige <strong>"Permitir"</strong> y recarga la página</div>
+    </div>
+    <div class="gps-step">
+      <div class="gps-step-num">4</div>
+      <div>Mantén la <strong>pantalla encendida</strong> mientras trabajas</div>
+    </div>
+  </div>
+  <button class="btn-reintentar-gps" onclick="reintentarGPS()">
+    🔄 Reintentar
+  </button>
 </div>
 
 <!-- ══ PANTALLA PRINCIPAL ══════════════════════════ -->
@@ -695,6 +824,7 @@ async function doLogin() {
     mostrarPantallaMain();
     conectarWS();
     iniciarGeolocalizacion();
+    activarWakeLock(); // mantener pantalla encendida en Android
 
   } catch(e) {
     err.textContent = 'Error de conexión con el servidor';
@@ -738,20 +868,60 @@ async function authFetch(url, opts = {}) {
   });
 }
 
+// ── WAKE LOCK (mantener pantalla encendida en Android) ──
+let wakeLock = null;
+
+async function activarWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => {
+      // Reactivar si se libera (ej: tab pierde foco)
+      setTimeout(activarWakeLock, 1000);
+    });
+  } catch(e) { console.log('WakeLock no disponible:', e); }
+}
+
+// Reactivar WakeLock cuando la pestaña vuelve al foco
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') activarWakeLock();
+});
+
+// ── DETECCIÓN OFFLINE ─────────────────────────────
+let estaOffline = false;
+
+function setOffline(offline) {
+  estaOffline = offline;
+  const badge = document.getElementById('offline-badge');
+  if (offline) {
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+}
+
+window.addEventListener('online',  () => setOffline(false));
+window.addEventListener('offline', () => setOffline(true));
+
 // ── GEOLOCALIZACIÓN ───────────────────────────────
 let geoWatchId = null;
+let ultimaUbicacion = null;
 
 function iniciarGeolocalizacion() {
   if (!navigator.geolocation) {
-    document.getElementById('ws-text').textContent = 'GPS no disponible en este dispositivo';
+    mostrarPantallaGPS('GPS no disponible en este dispositivo');
     return;
   }
   document.getElementById('ws-text').textContent = 'Obteniendo ubicacion GPS...';
+
+  // Primera lectura rápida
   navigator.geolocation.getCurrentPosition(enviarUbicacion, errorGeo, {
     enableHighAccuracy: true, timeout: 15000, maximumAge: 0
   });
+
+  // Watch continuo — cada 10s máximo (ahorra datos)
   geoWatchId = navigator.geolocation.watchPosition(enviarUbicacion, errorGeo, {
-    enableHighAccuracy: true, timeout: 15000, maximumAge: 5000
+    enableHighAccuracy: true, timeout: 15000, maximumAge: 10000
   });
 }
 
@@ -759,28 +929,64 @@ async function enviarUbicacion(position) {
   if (!driverData) return;
   const lat = position.coords.latitude;
   const lon = position.coords.longitude;
+  ultimaUbicacion = { lat, lon };
+
+  // Ocultar pantalla GPS si estaba visible
+  const gpsScreen = document.getElementById('screen-gps');
+  if (gpsScreen.style.display !== 'none') {
+    gpsScreen.style.display = 'none';
+    document.getElementById('screen-main').style.display = 'flex';
+  }
+
   try {
     const res = await fetch(
       `${API}/driver/location?driver_id=${driverData.driver_id}&lat=${lat}&lon=${lon}`,
       { method: 'POST' }
     );
     if (res.ok) {
+      setOffline(false);
       document.getElementById('ws-text').textContent =
-        'GPS activo — ' + lat.toFixed(4) + ', ' + lon.toFixed(4);
+        '● GPS activo — ' + lat.toFixed(4) + ', ' + lon.toFixed(4);
       document.getElementById('ws-indicator').classList.add('on');
     }
-  } catch(e) { console.log('Error enviando ubicacion:', e); }
+  } catch(e) {
+    // Sin conexión — marcar offline pero guardar última ubicación
+    setOffline(true);
+    document.getElementById('ws-text').textContent =
+      '⚠ Sin señal — última pos: ' + lat.toFixed(4) + ', ' + lon.toFixed(4);
+  }
 }
 
 function errorGeo(error) {
-  let msg = 'GPS: ';
   switch(error.code) {
-    case 1: msg += 'Permiso denegado — activa ubicacion en el navegador'; break;
-    case 2: msg += 'Posicion no disponible'; break;
-    case 3: msg += 'Tiempo agotado — reintentando...';
-      setTimeout(iniciarGeolocalizacion, 5000); break;
+    case 1:
+      // Permiso denegado — mostrar pantalla de instrucciones
+      mostrarPantallaGPS();
+      break;
+    case 2:
+      document.getElementById('ws-text').textContent = '⚠ GPS: posicion no disponible';
+      break;
+    case 3:
+      document.getElementById('ws-text').textContent = '⚠ GPS: tiempo agotado — reintentando...';
+      setTimeout(iniciarGeolocalizacion, 5000);
+      break;
   }
-  document.getElementById('ws-text').textContent = msg;
+}
+
+function mostrarPantallaGPS() {
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-main').style.display = 'none';
+  document.getElementById('screen-gps').style.display = 'flex';
+}
+
+function reintentarGPS() {
+  document.getElementById('screen-gps').style.display = 'none';
+  if (driverData) {
+    document.getElementById('screen-main').style.display = 'flex';
+    iniciarGeolocalizacion();
+  } else {
+    document.getElementById('screen-login').style.display = 'flex';
+  }
 }
 
 // ── WEBSOCKET ─────────────────────────────────────
@@ -788,7 +994,7 @@ function conectarWS() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   const host  = location.hostname;
   const port  = (host === 'localhost' || host === '127.0.0.1') ? ':8000' : '';
-  const url   = `${proto}://${host}${port}/ws/driver?driver_id=${driverData.driver_id}`;
+  const url   = `${proto}://${host}${port}/ws/driver/${driverData.driver_id}`;
   ws = new WebSocket(url);
 
   ws.onopen = () => {

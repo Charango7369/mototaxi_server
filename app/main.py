@@ -31,6 +31,7 @@ app.include_router(monitor_router.router)
 Base.metadata.create_all(bind=engine)
 
 
+# ── RUTAS DIRECTAS A HTMLS ────────────────────────────────────────
 @app.get("/", response_class=FileResponse)
 def root():
     return FileResponse(os.path.join(STATIC_DIR, "pasajero.html"))
@@ -59,7 +60,11 @@ def estadisticas():
 def monitor():
     return FileResponse(os.path.join(STATIC_DIR, "monitor_dashboard.html"))
 
-@app.post("/admin/init-db")
+
+@app.get("/manifest.json")
+def manifest():
+    return FileResponse(os.path.join(STATIC_DIR, "manifest.json"),
+                       media_type="application/manifest+json")
 def init_db(db: Session = Depends(get_db)):
     from app.models import Sindicato
     if db.query(Sindicato).count() > 0:
