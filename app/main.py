@@ -65,6 +65,7 @@ def monitor():
 def manifest():
     return FileResponse(os.path.join(STATIC_DIR, "manifest.json"),
                        media_type="application/manifest+json")
+@app.post("/admin/init-db")
 def init_db(db: Session = Depends(get_db)):
     from app.models import Sindicato
     if db.query(Sindicato).count() > 0:
